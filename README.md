@@ -10,7 +10,7 @@ Weekly Status Report management system for a 350-person federal contracting team
 | Styling | Tailwind CSS 3 (light/dark mode) |
 | Backend | Supabase (Postgres + pgvector, Auth, Edge Functions) |
 | Auth | Azure AD (Entra ID) OAuth via Supabase |
-| AI | Claude Sonnet for summaries, OpenAI embeddings for semantic search |
+| AI | Anthropic Claude via AWS Bedrock (summaries + embeddings) |
 | Deployment | Node adapter on EC2 + Nginx + PM2 |
 
 ## Features
@@ -19,7 +19,7 @@ Weekly Status Report management system for a 350-person federal contracting team
 - **Manager Dashboard** — view team WSRs, generate AI-powered monthly status reports, run quarterly reviews
 - **Past Performance Search** — semantic search across historical WSRs for BD proposals
 - **Admin Panel** — manage projects, users, tags, manager overrides, and Lattice org sync
-- **Dark Mode** — user-selectable with localStorage persistence (Dynamo Black #343433)
+- **Dark Mode** — user-selectable with localStorage persistence, custom Dynamo Black (`#343433`) color scale
 - **Demo Mode** — full offline demo with realistic data (no Supabase required)
 
 ## Project Structure
@@ -98,8 +98,7 @@ NODE_ENV=production
 
 Edge function secrets are set in the Supabase Dashboard:
 
-- `ANTHROPIC_API_KEY` — Claude API for report summaries
-- `OPENAI_API_KEY` — OpenAI API for WSR embeddings
+- `ANTHROPIC_API_KEY` — Claude API for summaries and embeddings (or AWS Bedrock credentials)
 - `LATTICE_API_KEY` — Lattice API for org chart sync
 
 Azure AD OAuth is configured in the Supabase Dashboard under Authentication > Providers.
@@ -120,5 +119,6 @@ See [DEPLOY.md](DEPLOY.md) for full EC2 + Nginx + PM2 deployment instructions.
 ## Brand
 
 - **Primary color:** Dynamo Red `#fe4e51`
-- **Dark mode:** Dynamo Black `#343433`
+- **Dark mode:** Dynamo Black `#343433` (custom Tailwind color scale)
+- **Favicon:** `DYNAMO-ICON-RED.png`
 - **Font:** Inter
