@@ -28,7 +28,7 @@
     : '?';
 </script>
 
-<header class="bg-white dark:bg-dark border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 h-14 flex items-center gap-4 shrink-0">
+<header class="bg-white dark:bg-dark border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-[17px] flex items-center gap-4 shrink-0">
   <!-- Mobile menu toggle -->
   <button
     on:click={onMenuClick}

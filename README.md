@@ -125,6 +125,16 @@ The app will be available at `http://localhost`. The compose stack runs:
 - **app** — SvelteKit Node server (port 3000, internal)
 - **nginx** — Reverse proxy with gzip and caching (port 80, exposed)
 
+The `ORIGIN` env var in `docker-compose.yml` must match the URL users access the app from (e.g., `http://localhost`, `https://wsr.example.com`). This is required for SvelteKit's CSRF protection to allow form submissions.
+
+For production with real Supabase, pass build args:
+
+```bash
+docker compose build \
+  --build-arg PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
+  --build-arg PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```
+
 To stop:
 
 ```bash
