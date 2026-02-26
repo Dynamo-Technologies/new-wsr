@@ -11,7 +11,7 @@ Weekly Status Report management system for a 350-person federal contracting team
 | Backend | Supabase (Postgres + pgvector, Auth, Edge Functions) |
 | Auth | Azure AD (Entra ID) OAuth via Supabase |
 | AI | Anthropic Claude via AWS Bedrock (summaries + embeddings) |
-| Deployment | Node adapter on EC2 + Nginx + PM2 |
+| Deployment | Docker + Nginx (or EC2 + PM2) |
 
 ## Features
 
@@ -114,7 +114,26 @@ Azure AD OAuth is configured in the Supabase Dashboard under Authentication > Pr
 
 ## Deployment
 
-See [DEPLOY.md](DEPLOY.md) for full EC2 + Nginx + PM2 deployment instructions.
+### Docker (Recommended)
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+The app will be available at `http://localhost`. The compose stack runs:
+- **app** — SvelteKit Node server (port 3000, internal)
+- **nginx** — Reverse proxy with gzip and caching (port 80, exposed)
+
+To stop:
+
+```bash
+docker compose down
+```
+
+### Manual (EC2 + PM2)
+
+See [DEPLOY.md](DEPLOY.md) for EC2 + Nginx + PM2 deployment instructions.
 
 ## Brand
 
