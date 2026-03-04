@@ -5,6 +5,8 @@
 
   export let open = false;
   export let user: User;
+  export let managedProjects: { id: string; name: string }[] = [];
+  export let isAdmin = false;
 
   // Role-based navigation
   const employeeNav = [
@@ -12,7 +14,7 @@
     { href: '/dashboard/wsr/new', label: 'Submit WSR', icon: 'plus-circle' }
   ];
 
-  const managerNav = [
+  const pmNav = [
     { href: '/manager', label: 'Manager Dashboard', icon: 'users' },
     { href: '/dashboard', label: 'My Dashboard', icon: 'home' },
     { href: '/bd', label: 'Past Performance', icon: 'search' },
@@ -27,11 +29,12 @@
     { href: '/dashboard/wsr/new', label: 'Submit WSR', icon: 'plus-circle' }
   ];
 
+  $: isPM = managedProjects.length > 0;
   $: navItems =
-    user?.role === 'admin'
+    isAdmin
       ? adminNav
-      : ['manager', 'director', 'vp'].includes(user?.role)
-        ? managerNav
+      : isPM
+        ? pmNav
         : employeeNav;
 
   $: currentPath = $page.url.pathname;
@@ -55,14 +58,9 @@
   };
 
   function getRoleLabel(role: string): string {
-    const labels: Record<string, string> = {
-      employee: 'Employee',
-      manager: 'Manager',
-      director: 'Director',
-      vp: 'VP',
-      admin: 'Administrator'
-    };
-    return labels[role] ?? role;
+    if (isAdmin) return 'Administrator';
+    if (isPM) return 'Program Manager';
+    return 'Employee';
   }
 
   // User initials for avatar

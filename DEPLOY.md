@@ -30,42 +30,31 @@ The migration handles this, but verify: SQL Editor → `SELECT * FROM pg_extensi
 3. Set Client ID, Client Secret, and Tenant ID from your Azure App Registration
 4. Add redirect URL: `https://your-domain.com/auth/callback`
 
-### Deploy Edge Functions
-```bash
-# Install Supabase CLI
-npm install -g supabase
-
-# Login
-supabase login
-
-# Link to your project
-supabase link --project-ref your-project-ref
-
-# Deploy all functions
-supabase functions deploy generate-embeddings
-supabase functions deploy generate-msr-summary
-supabase functions deploy generate-quarterly-review
-supabase functions deploy generate-past-performance
-supabase functions deploy lattice-sync
-
-# Set Edge Function secrets
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-supabase secrets set OPENAI_API_KEY=sk-...
-supabase secrets set LATTICE_API_KEY=lat_...
-supabase secrets set LATTICE_API_URL=https://api.latticehq.com/v1
-```
-
-### Schedule Lattice Sync (Weekly)
-In Supabase Dashboard → Database → Cron Jobs:
+### Create Monthly Status Reports Table
+Run in Supabase SQL Editor:
 ```sql
-SELECT cron.schedule(
-    'lattice-weekly-sync',
-    '0 0 * * 0',  -- Every Sunday at midnight
-    $$SELECT net.http_post(
-        url := 'https://your-project-ref.supabase.co/functions/v1/lattice-sync',
-        headers := '{"Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb
-    )$$
+CREATE TABLE IF NOT EXISTS public.monthly_status_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES public.projects(id),
+  month DATE NOT NULL,
+  generated_by UUID REFERENCES auth.users(id),
+  ai_summary TEXT,
+  human_edited_summary TEXT,
+  wsr_ids UUID[] DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'final')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(project_id, month)
 );
+
+ALTER TABLE public.monthly_status_reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can read MSRs"
+  ON public.monthly_status_reports FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Authenticated users can insert MSRs"
+  ON public.monthly_status_reports FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Authenticated users can update MSRs"
+  ON public.monthly_status_reports FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
 ```
 
 ---
@@ -153,9 +142,17 @@ sudo systemctl reload nginx
 ```bash
 PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# AWS Bedrock (for AI features — MSR generation + past performance)
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=...
+AWS_REGION=us-east-1
+
 PORT=3000
 NODE_ENV=production
 ```
+
+> **Note:** On EC2 with an IAM instance role that has `AmazonBedrockFullAccess`, the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` variables are not needed — the SDK will use the instance role automatically.
 
 ---
 
@@ -205,8 +202,7 @@ WHERE email = 'your.email@dynamobigdata.com';
 ## Architecture Notes
 
 - SvelteKit serves both SSR and API routes via the Node adapter
-- Supabase handles auth, database, and Edge Functions
-- All AI operations are async via Edge Functions (Claude API)
+- Supabase handles auth and database (PostgreSQL + pgvector)
+- AI features (MSR generation, past performance narratives) call AWS Bedrock directly from the SvelteKit server using Claude Haiku 4.5
 - pgvector enables semantic search for past performance queries
-- Lattice sync runs weekly to keep org chart current
 - RLS policies enforce data access controls at the database level

@@ -116,7 +116,7 @@
               <option value="">Select a project...</option>
               {#each data.projects as project}
                 <option value={project.id}>
-                  {project.name}{project.client_agency ? ` (${project.client_agency})` : ''}
+                  {project.name}
                 </option>
               {/each}
             </select>
@@ -205,17 +205,13 @@
         <!-- Accomplishments - all types -->
         <div>
           <label class="label" for="accomplishments">
-            {reportType === 'pm' ? 'PM Accomplishments' : 'Accomplishments'} <span class="text-red-500 dark:text-red-400">*</span>
+            Accomplishments <span class="text-red-500 dark:text-red-400">*</span>
           </label>
           <textarea
             name="accomplishments"
             id="accomplishments"
             class="textarea"
-            placeholder={reportType === 'technical'
-              ? 'Describe technical accomplishments this week (features shipped, code written, systems configured, etc.)'
-              : reportType === 'pm'
-                ? 'Describe PM accomplishments (milestones reached, deliverables submitted, meetings conducted, etc.)'
-                : 'Describe administrative accomplishments this week'}
+            placeholder="Describe your accomplishments this week"
             rows="4"
             required
           ></textarea>
@@ -224,45 +220,37 @@
         <!-- This Week -->
         <div>
           <label class="label" for="this_week">
-            {reportType === 'technical'
-              ? 'This Week — Technical Tasks'
-              : reportType === 'pm'
-                ? 'This Week — PM Activities'
-                : 'This Week — Administrative Tasks'}
+            Tasks This Week <span class="text-red-500 dark:text-red-400">*</span>
           </label>
           <textarea
             name="this_week"
             id="this_week"
             class="textarea"
-            placeholder={reportType === 'technical'
-              ? 'List key technical tasks worked on this week'
-              : reportType === 'pm'
-                ? 'List PM activities, meetings, and deliverables worked on'
-                : 'List administrative tasks and activities'}
+            placeholder="List tasks worked on this week"
             rows="3"
+            required
           ></textarea>
         </div>
 
         <!-- Blockers / Risks -->
         <div>
           <label class="label" for="blockers">
-            {reportType === 'pm' ? 'Risks & Issues' : 'Blockers'}
+            Blockers <span class="text-red-500 dark:text-red-400">*</span>
           </label>
           <textarea
             name="blockers"
             id="blockers"
             class="textarea"
-            placeholder={reportType === 'pm'
-              ? 'Describe any risks, issues, or concerns affecting the program'
-              : 'Describe any blockers preventing progress'}
+            placeholder="Describe any blockers preventing progress"
             rows="2"
+            required
           ></textarea>
         </div>
 
         <!-- Next Week -->
         <div>
           <label class="label" for="next_week">
-            {reportType === 'pm' ? 'Next Week — Planning' : 'Next Week — Planned Work'}
+            Tasks Next Week <span class="text-red-500 dark:text-red-400">*</span>
           </label>
           <textarea
             name="next_week"
@@ -270,18 +258,20 @@
             class="textarea"
             placeholder="What are you planning to work on next week?"
             rows="3"
+            required
           ></textarea>
         </div>
 
         <!-- Hours Narrative -->
         <div>
-          <label class="label" for="hours_narrative">Hours Narrative</label>
+          <label class="label" for="hours_narrative">Hours Narrative <span class="text-red-500 dark:text-red-400">*</span></label>
           <textarea
             name="hours_narrative"
             id="hours_narrative"
             class="textarea"
             placeholder="Briefly describe how your hours were allocated (e.g., '32 hrs contract work, 8 hrs proposal support')"
             rows="2"
+            required
           ></textarea>
         </div>
       </div>

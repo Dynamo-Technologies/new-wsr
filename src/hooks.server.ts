@@ -3,27 +3,20 @@ import { type Handle, redirect } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 
-const DEMO_COOKIE = 'demo_auth';
-const DEMO_USER_STUB = { id: 'aa000001-0000-0000-0000-000000000001' } as any;
-const DEMO_SESSION_STUB = { user: DEMO_USER_STUB } as any;
-
 const supabaseHandle: Handle = async ({ event, resolve }) => {
   event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
-      get: (key) => event.cookies.get(key),
-      set: (key, value, options) => {
+      get: (key: string) => event.cookies.get(key),
+      set: (key: string, value: string, options: Record<string, unknown>) => {
         event.cookies.set(key, value, { ...options, path: '/' });
       },
-      remove: (key, options) => {
+      remove: (key: string, options: Record<string, unknown>) => {
         event.cookies.delete(key, { ...options, path: '/' });
       }
     }
   });
 
   event.locals.safeGetSession = async () => {
-    if (event.cookies.get(DEMO_COOKIE) === 'true') {
-      return { session: DEMO_SESSION_STUB, user: DEMO_USER_STUB };
-    }
     const { data: { session } } = await event.locals.supabase.auth.getSession();
     if (!session) return { session: null, user: null };
     const { data: { user }, error } = await event.locals.supabase.auth.getUser();
@@ -39,26 +32,18 @@ const supabaseHandle: Handle = async ({ event, resolve }) => {
 };
 
 const authGuard: Handle = async ({ event, resolve }) => {
-  const isDemoMode = event.cookies.get(DEMO_COOKIE) === 'true';
-  event.locals.isDemoMode = isDemoMode;
-
-  if (isDemoMode) {
-    event.locals.session = DEMO_SESSION_STUB;
-    event.locals.user = DEMO_USER_STUB;
-  } else {
-    const { session, user } = await event.locals.safeGetSession();
-    event.locals.session = session;
-    event.locals.user = user;
-  }
+  const { session, user } = await event.locals.safeGetSession();
+  event.locals.session = session;
+  event.locals.user = user;
 
   const protectedPaths = ['/dashboard', '/manager', '/bd', '/admin'];
   const isProtected = protectedPaths.some((p) => event.url.pathname.startsWith(p));
 
-  if (isProtected && !event.locals.session) {
+  if (isProtected && !session) {
     throw redirect(303, '/login');
   }
 
-  if (event.url.pathname === '/login' && event.locals.session) {
+  if (event.url.pathname === '/login' && session) {
     throw redirect(303, '/dashboard');
   }
 

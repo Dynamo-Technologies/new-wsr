@@ -1,21 +1,16 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { DEMO_USER } from '$lib/demo/data';
+import { ADMIN_EMAILS } from '$lib/config';
 
-export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase, isDemoMode } }) => {
+export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabase } }) => {
   const { session, user } = await safeGetSession();
 
   if (!session || !user) {
     throw redirect(303, '/login');
   }
 
-  // Demo mode — return the hardcoded demo user
-  if (isDemoMode) {
-    return { session, appUser: DEMO_USER };
-  }
-
   const { data: appUser } = await supabase
-    .from('users')
+    .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single();
@@ -24,5 +19,26 @@ export const load: LayoutServerLoad = async ({ locals: { safeGetSession, supabas
     throw redirect(303, '/login');
   }
 
-  return { session, appUser };
+  const isAdmin = appUser.role === 'admin' || ADMIN_EMAILS.includes(appUser.email);
+
+  // Admins get all projects; PMs get matched projects
+  let managedProjects;
+  if (isAdmin) {
+    const { data } = await supabase
+      .from('projects')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name');
+    managedProjects = data ?? [];
+  } else {
+    const { data } = await supabase
+      .from('projects')
+      .select('id, name')
+      .eq('pm_email', appUser.email)
+      .eq('is_active', true)
+      .order('name');
+    managedProjects = data ?? [];
+  }
+
+  return { session, appUser, managedProjects, isAdmin };
 };

@@ -2,7 +2,7 @@
   import { enhance } from '$app/forms';
   import { toast } from '$lib/stores/toast';
   import { formatDate, getWeekLabel, getRecentMonths } from '$lib/utils/dates';
-  import { downloadMarkdown, downloadAsHTML } from '$lib/utils/export';
+  import { downloadMarkdown, printAsPDF } from '$lib/utils/export';
   import WSRCard from '$lib/components/wsr/WSRCard.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import LoadingCard from '$lib/components/ui/LoadingCard.svelte';
@@ -11,7 +11,7 @@
 
   export let data;
 
-  let activeTab: 'team' | 'msr' | 'quarterly' = 'team';
+  let activeTab: 'team' | 'msr' = 'team';
   function setTab(id: string) { activeTab = id as typeof activeTab; }
 
   // Team WSR filters
@@ -60,12 +60,20 @@
     toast.success('Exported as Markdown');
   }
 
+  function exportMSRPDF(msr: typeof selectedMSR) {
+    if (!msr) return;
+    const content = msr.human_edited_summary ?? msr.ai_summary ?? '';
+    const title = `MSR - ${msr.project?.name} - ${formatDate(msr.month, 'MMMM yyyy')}`;
+    printAsPDF(title, content);
+  }
+
   function handleMSRGenResult({ result }: { result: { type: string; data?: any } }) {
     generatingMSR = false;
     if (result.type === 'success') {
       toast.success('MSR generated successfully! Check the MSRs list.');
     } else {
-      toast.error('Failed to generate MSR. Please try again.');
+      const msg = result.data?.error ?? 'Failed to generate MSR. Please try again.';
+      toast.error(msg);
     }
   }
 
@@ -78,14 +86,24 @@
       toast.error('Failed to save MSR');
     }
   }
+
+  let deletingMSRId: string | null = null;
+
+  function handleDeleteMSRResult({ result }: { result: { type: string } }) {
+    deletingMSRId = null;
+    if (result.type === 'success') {
+      toast.success('MSR deleted');
+    } else {
+      toast.error('Failed to delete MSR');
+    }
+  }
 </script>
 
 <!-- Tabs -->
 <div class="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-6">
   {#each [
     { id: 'team', label: 'Team WSRs', count: data.teamWSRs.length },
-    { id: 'msr', label: 'Monthly Reports', count: data.msrs.length },
-    { id: 'quarterly', label: 'Quarterly Reviews', count: 0 }
+    { id: 'msr', label: 'Monthly Reports', count: data.msrs.length }
   ] as tab}
     <button
       on:click={() => setTab(tab.id)}
@@ -265,7 +283,7 @@
                     </td>
                     <td class="table-cell">{formatDate(msr.month, 'MMMM yyyy')}</td>
                     <td class="table-cell">
-                      <span class="badge {msr.status === 'finalized' ? 'badge-green' : 'badge-yellow'}">
+                      <span class="badge {msr.status === 'final' ? 'badge-green' : 'badge-yellow'}">
                         {msr.status}
                       </span>
                     </td>
@@ -275,9 +293,23 @@
                         <button class="text-xs text-primary hover:underline" on:click={() => openMSR(msr)}>
                           View/Edit
                         </button>
-                        <button class="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" on:click={() => exportMSR(msr)}>
-                          Export
-                        </button>
+                        <form
+                          method="POST"
+                          action="?/deleteMSR"
+                          use:enhance={() => {
+                            if (!confirm('Delete this MSR? This cannot be undone.')) return ({ cancel }) => cancel();
+                            deletingMSRId = msr.id;
+                            return async ({ result, update }) => {
+                              await update();
+                              handleDeleteMSRResult({ result });
+                            };
+                          }}
+                        >
+                          <input type="hidden" name="msr_id" value={msr.id} />
+                          <button type="submit" class="text-xs text-primary hover:underline" disabled={deletingMSRId === msr.id}>
+                            {deletingMSRId === msr.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </form>
                       </div>
                     </td>
                   </tr>
@@ -290,33 +322,6 @@
     </div>
   </div>
 
-<!-- ===== QUARTERLY REVIEWS TAB ===== -->
-{:else if activeTab === 'quarterly'}
-  <div class="card p-6">
-    <h2 class="section-title mb-4">Generate Quarterly Review</h2>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-      Select a team member to generate an AI-powered quarterly performance review based on their WSRs.
-    </p>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-      {#each data.directReports as employee}
-        <a
-          href="/manager/review/{employee.id}"
-          class="flex items-center gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary hover:bg-primary-50/30 dark:hover:bg-primary-950/30 transition-all duration-150"
-        >
-          <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold shrink-0">
-            {employee.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-          </div>
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{employee.full_name}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400 capitalize">{employee.role}</p>
-          </div>
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 dark:text-gray-600 ml-auto shrink-0">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </a>
-      {/each}
-    </div>
-  </div>
 {/if}
 
 <!-- MSR View/Edit Modal -->
@@ -325,7 +330,7 @@
     <div class="mb-4 flex items-center gap-3 flex-wrap">
       <span class="text-sm font-medium text-gray-900 dark:text-gray-100">{selectedMSR.project?.name}</span>
       <span class="badge badge-gray">{formatDate(selectedMSR.month, 'MMMM yyyy')}</span>
-      <span class="badge {selectedMSR.status === 'finalized' ? 'badge-green' : 'badge-yellow'}">{selectedMSR.status}</span>
+      <span class="badge {selectedMSR.status === 'final' ? 'badge-green' : 'badge-yellow'}">{selectedMSR.status}</span>
     </div>
 
     <form
@@ -364,7 +369,7 @@
         <label class="label" for="msr-status">Status</label>
         <select name="status" id="msr-status" class="select" value={selectedMSR.status}>
           <option value="draft">Draft</option>
-          <option value="finalized">Finalized</option>
+          <option value="final">Final</option>
         </select>
       </div>
     </form>
@@ -374,6 +379,9 @@
     {#if selectedMSR}
       <button type="button" class="btn-ghost" on:click={() => exportMSR(selectedMSR)}>
         Export Markdown
+      </button>
+      <button type="button" class="btn-ghost" on:click={() => exportMSRPDF(selectedMSR)}>
+        Export PDF
       </button>
     {/if}
     <button type="button" class="btn-secondary" on:click={() => (msrModalOpen = false)}>Close</button>

@@ -4,11 +4,36 @@
   export let label = '';
   export let placeholder = 'Select tags...';
 
+  let customTagInput = '';
+  let showAddInput = false;
+
   function toggle(tag: string) {
     if (selected.includes(tag)) {
       selected = selected.filter((t) => t !== tag);
     } else {
       selected = [...selected, tag];
+    }
+  }
+
+  function addCustomTag() {
+    const tag = customTagInput.trim();
+    if (tag && !options.includes(tag) && !selected.includes(tag)) {
+      options = [...options, tag];
+      selected = [...selected, tag];
+    } else if (tag && options.includes(tag) && !selected.includes(tag)) {
+      selected = [...selected, tag];
+    }
+    customTagInput = '';
+    showAddInput = false;
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomTag();
+    } else if (e.key === 'Escape') {
+      customTagInput = '';
+      showAddInput = false;
     }
   }
 </script>
@@ -29,7 +54,30 @@
         {tag}
       </button>
     {/each}
-    {#if options.length === 0}
+
+    {#if showAddInput}
+      <input
+        type="text"
+        bind:value={customTagInput}
+        on:keydown={handleKeydown}
+        on:blur={addCustomTag}
+        class="px-2 py-0.5 text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded-full outline-none
+               text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 w-36"
+        placeholder="Type tag name..."
+        autofocus
+      />
+    {:else}
+      <button
+        type="button"
+        on:click={() => (showAddInput = true)}
+        class="px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-gray-300 dark:border-gray-600
+               text-gray-500 dark:text-gray-400 hover:border-primary hover:text-primary transition-colors duration-100"
+      >
+        + Add Tag
+      </button>
+    {/if}
+
+    {#if options.length === 0 && !showAddInput}
       <span class="text-xs text-gray-400 dark:text-gray-500 px-1 py-1">{placeholder}</span>
     {/if}
   </div>

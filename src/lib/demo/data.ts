@@ -16,12 +16,8 @@ const JORDAN_ID  = 'aa000006-0000-0000-0000-000000000006';
 const TAYLOR_ID  = 'aa000007-0000-0000-0000-000000000007';
 const MIKE_ID    = 'aa000008-0000-0000-0000-000000000008';
 
-// ─── Project IDs ──────────────────────────────────────────────
-const CISA_ID     = 'bb000001-0000-0000-0000-000000000001';
-const DOD_ZT_ID   = 'bb000002-0000-0000-0000-000000000002';
-const FBI_ID      = 'bb000003-0000-0000-0000-000000000003';
-const INTERNAL_ID = 'bb000004-0000-0000-0000-000000000004';
-const DOS_ID      = 'bb000005-0000-0000-0000-000000000005';
+// Helper to generate deterministic project IDs
+const pid = (n: number) => `bb${String(n).padStart(6, '0')}-0000-0000-0000-000000000000`;
 
 // ─── Demo Users ───────────────────────────────────────────────
 export const DEMO_USER: User = {
@@ -76,48 +72,74 @@ export const DEMO_USERS: User[] = [
 ];
 
 // ─── Demo Projects ────────────────────────────────────────────
-export const DEMO_PROJECTS: Project[] = [
-  {
-    id: CISA_ID, name: 'DHS CISA Cyber Defense Task Order 5',
-    contract_number: 'HSHQDC-20-D-00007', client_agency: 'DHS',
-    project_type: 'Prime', start_date: '2022-10-01', end_date: '2026-09-30',
-    program_manager_id: DEMO_USER_ID, is_active: true,
-    created_at: '2022-09-15T09:00:00Z',
-    program_manager: DEMO_USER
-  },
-  {
-    id: DOD_ZT_ID, name: 'DoD Zero Trust Architecture Implementation',
-    contract_number: 'FA8750-23-C-0041', client_agency: 'DoD',
-    project_type: 'Prime', start_date: '2023-04-01', end_date: '2025-09-30',
-    program_manager_id: SARAH_ID, is_active: true,
-    created_at: '2023-03-20T09:00:00Z',
-    program_manager: DEMO_USERS.find(u => u.id === SARAH_ID)
-  },
-  {
-    id: FBI_ID, name: 'FBI Cybersecurity Platform Modernization',
-    contract_number: 'DJF-22-1400-PR-0067821', client_agency: 'FBI',
-    project_type: 'Subcontractor', start_date: '2023-01-15', end_date: '2025-07-14',
-    program_manager_id: MARCUS_ID, is_active: true,
-    created_at: '2023-01-05T09:00:00Z',
-    program_manager: DEMO_USERS.find(u => u.id === MARCUS_ID)
-  },
-  {
-    id: DOS_ID, name: 'DOS Digital Transformation Initiative',
-    contract_number: 'SAQMMA-22-D-0233', client_agency: 'DOS',
-    project_type: 'Task Order', start_date: '2023-09-01', end_date: '2026-08-31',
-    program_manager_id: SARAH_ID, is_active: true,
-    created_at: '2023-08-20T09:00:00Z',
-    program_manager: DEMO_USERS.find(u => u.id === SARAH_ID)
-  },
-  {
-    id: INTERNAL_ID, name: 'Dynamo AI/ML Research & Innovation',
-    contract_number: null, client_agency: 'Internal',
-    project_type: 'Internal R&D', start_date: '2024-01-01', end_date: null,
-    program_manager_id: DEMO_USER_ID, is_active: true,
-    created_at: '2024-01-01T09:00:00Z',
-    program_manager: DEMO_USER
-  }
+const PROJECT_NAMES = [
+  'Army INSCOM PRMSS -0019',
+  'Army PM PNT SETA -0058',
+  'Army PMOSE -0010',
+  'CFPB OCR RDMT DSS -0099',
+  'DHA OMNIBUS IV IDIQ -0015',
+  'DHS CBP MSD -1086',
+  'DHS CBP OPR SS -1262',
+  'DHS ICE SEVP POSS -0019',
+  'DHS ICE SWIFT -0012',
+  'DIA SITE III IDIQ -0070',
+  'DLA PEO JETS 2.0 -0021',
+  'DLA PIEE PMO -0166',
+  'FBI APSS IDIQ -0495',
+  'FBI CIRG NVLP -0335',
+  'FPISC ICF SCS -0208',
+  'GSA MAS -230CA',
+  'GSA STARS III IDIQ -0636',
+  'HHS HSPD12 PMO AMSS -0029',
+  'MDA Shield -E582',
+  'MDA SHIELD -F182',
+  'NGB BTO CPISS -2502',
+  'NGB DBE-TTX PSS -3304',
+  'NOAA NMITS BPA -0064',
+  'USAF ACC A2 ATAS -0042',
+  'USAF AFCENT ISR -0071',
+  'USAF AFMC EPASS67 -0001',
+  'USAF AFSOC CSS -0001',
+  'USAF CAE A&AS -0004',
+  'USAF EPASS74 -B005',
+  'USAF SpOC-2 CFSCC -0003',
+  'USCG ALC ACATS -0001',
+  'USCG ALC SETS -0039',
+  'USCG C5ISC C2PL -0010',
+  'USCG CG721 PMSS -0001',
+  'USCG CG731 DPMSS -0005',
+  'USCG CG741 PMSS -0007',
+  'USCG LREPL MPC -0014',
+  'USCG OPTEVFOR OTEM -0001',
+  'USCG PROGC TSS -0100',
+  'USCG SFLC MECPL EC -0031',
+  'USDA ARS NAL DPSS -0153',
+  'USDA ARS WMD -0332',
+  'USDA FNS FBG IWT -0001',
+  'USDA FNS NDL -0816',
+  'USDA FS ADAS -0176',
+  'USDA FS WSS -0006',
+  'USDA iNAP -0439',
+  'USDA OCIO ISC SOC -0296',
+  'USDA OCIO PMSS -0303',
+  'USDA OCIO STRATUS -0026',
+  'USDA SOFA BPA -0019',
+  'USSF SpOC CMR PEX -0018'
 ];
+
+export const DEMO_PROJECTS: Project[] = PROJECT_NAMES.map((name, i) => ({
+  id: pid(i + 1),
+  name,
+  contract_number: null,
+  client_agency: name.split(' ')[0],
+  project_type: 'Prime',
+  start_date: '2024-01-01',
+  end_date: null,
+  program_manager_id: DEMO_USER_ID,
+  is_active: true,
+  created_at: '2024-01-01T09:00:00Z',
+  program_manager: undefined
+}));
 
 // ─── Demo Work Type Tags ──────────────────────────────────────
 export const DEMO_TAGS: WorkTypeTag[] = [
@@ -141,7 +163,7 @@ export const DEMO_TAGS: WorkTypeTag[] = [
 export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project })[] = [
   // ── Devin Hill WSRs ──
   {
-    id: 'dd000001', user_id: DEMO_USER_ID, project_id: CISA_ID,
+    id: 'dd000001', user_id: DEMO_USER_ID, project_id: pid(6),
     week_ending: '2025-02-21', report_type: 'pm',
     accomplishments: 'Completed Q1 program review with CISA CO and COR. Finalized subcontractor invoicing for January (total: $1.2M). Approved Task Order 6 kickoff materials and submitted CDRLs on schedule. Resolved two outstanding action items from the February 7th IPT meeting.',
     blockers: 'Awaiting GFE laptop allocation for two new hires starting March 3rd. Escalated to contracting officer.',
@@ -150,10 +172,10 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs total: 30 hrs CISA TO5 PM activities, 10 hrs proposal support for upcoming recompete',
     work_type_tags: ['Program Management', 'CISA Mission Support', 'Stakeholder Engagement'],
     submitted_at: '2025-02-21T17:22:00Z', created_at: '2025-02-21T17:22:00Z', updated_at: '2025-02-21T17:22:00Z',
-    user: DEMO_USER, project: DEMO_PROJECTS[0]
+    user: DEMO_USER, project: DEMO_PROJECTS[5]
   },
   {
-    id: 'dd000002', user_id: DEMO_USER_ID, project_id: CISA_ID,
+    id: 'dd000002', user_id: DEMO_USER_ID, project_id: pid(6),
     week_ending: '2025-02-14', report_type: 'pm',
     accomplishments: 'Led Integrated Product Team (IPT) with 22 attendees. Submitted monthly financial report showing 98.2% on-budget performance. Onboarded 2 new technical resources to the CISA network enclave. Completed deliverable CDR-017 (Transition Plan) ahead of schedule.',
     blockers: 'Network access provisioning for new teammates taking 3+ weeks — working with CISA IT to expedite.',
@@ -162,10 +184,10 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: 35 hrs PM/program activities, 5 hrs BD support for DHS SEWP recompete',
     work_type_tags: ['Program Management', 'CISA Mission Support', 'Reporting'],
     submitted_at: '2025-02-14T16:45:00Z', created_at: '2025-02-14T16:45:00Z', updated_at: '2025-02-14T16:45:00Z',
-    user: DEMO_USER, project: DEMO_PROJECTS[0]
+    user: DEMO_USER, project: DEMO_PROJECTS[5]
   },
   {
-    id: 'dd000003', user_id: DEMO_USER_ID, project_id: INTERNAL_ID,
+    id: 'dd000003', user_id: DEMO_USER_ID, project_id: pid(48),
     week_ending: '2025-02-07', report_type: 'technical',
     accomplishments: 'Completed proof-of-concept for AI-powered WSR summarization using Claude API — achieved 94% relevance score in internal testing. Presented findings to leadership. Defined MVP feature set for Dynamo WSR Platform v1.0.',
     blockers: 'None.',
@@ -174,12 +196,12 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '15 hrs allocated to IR&D (20% time)',
     work_type_tags: ['API Development', 'Machine Learning', 'Software Development'],
     submitted_at: '2025-02-07T17:58:00Z', created_at: '2025-02-07T17:58:00Z', updated_at: '2025-02-07T17:58:00Z',
-    user: DEMO_USER, project: DEMO_PROJECTS[4]
+    user: DEMO_USER, project: DEMO_PROJECTS[47]
   },
 
   // ── Priya Patel WSRs ──
   {
-    id: 'dd000010', user_id: PRIYA_ID, project_id: CISA_ID,
+    id: 'dd000010', user_id: PRIYA_ID, project_id: pid(6),
     week_ending: '2025-02-21', report_type: 'technical',
     accomplishments: 'Deployed 3 new Splunk SIEM detection rules targeting MITRE ATT&CK T1078 (Valid Accounts) and T1566 (Phishing). Reduced false positive rate by 31% through alert tuning. Completed FISMA Annual Assessment questionnaire Section 4 (Incident Response).',
     blockers: 'Splunk ES version upgrade blocked by CISA change freeze until March 15. Documenting workarounds.',
@@ -188,10 +210,10 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: 36 hrs CISA TO5 cybersecurity work, 4 hrs FISMA documentation',
     work_type_tags: ['Cybersecurity', 'CISA Mission Support', 'FISMA Compliance'],
     submitted_at: '2025-02-21T16:30:00Z', created_at: '2025-02-21T16:30:00Z', updated_at: '2025-02-21T16:30:00Z',
-    user: DEMO_USERS[3], project: DEMO_PROJECTS[0]
+    user: DEMO_USERS[3], project: DEMO_PROJECTS[5]
   },
   {
-    id: 'dd000011', user_id: PRIYA_ID, project_id: CISA_ID,
+    id: 'dd000011', user_id: PRIYA_ID, project_id: pid(6),
     week_ending: '2025-02-14', report_type: 'technical',
     accomplishments: 'Architected and delivered 2 new REST API endpoints connecting CISA\'s threat intelligence platform to the Elasticsearch data lake. APIs handle ~12,000 events/minute in load testing. Completed peer code review for 3 colleague PRs.',
     blockers: 'API authentication issue with legacy CISA system requiring coordination with government-side developers.',
@@ -200,10 +222,10 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: API development and testing',
     work_type_tags: ['API Development', 'Cybersecurity', 'Systems Integration'],
     submitted_at: '2025-02-14T15:20:00Z', created_at: '2025-02-14T15:20:00Z', updated_at: '2025-02-14T15:20:00Z',
-    user: DEMO_USERS[3], project: DEMO_PROJECTS[0]
+    user: DEMO_USERS[3], project: DEMO_PROJECTS[5]
   },
   {
-    id: 'dd000012', user_id: PRIYA_ID, project_id: CISA_ID,
+    id: 'dd000012', user_id: PRIYA_ID, project_id: pid(6),
     week_ending: '2025-02-07', report_type: 'technical',
     accomplishments: 'Completed ETL pipeline for ingesting STIX/TAXII threat intelligence feeds into the CISA data lake. Pipeline processes 3 external feeds (ISAC, FS-ISAC, DIB-ISAC) with 99.7% uptime over first week of operation. Delivered technical design document.',
     blockers: 'None this week.',
@@ -212,12 +234,12 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: ETL/data engineering focus',
     work_type_tags: ['ETL', 'Data Engineering', 'API Development', 'CISA Mission Support'],
     submitted_at: '2025-02-07T17:10:00Z', created_at: '2025-02-07T17:10:00Z', updated_at: '2025-02-07T17:10:00Z',
-    user: DEMO_USERS[3], project: DEMO_PROJECTS[0]
+    user: DEMO_USERS[3], project: DEMO_PROJECTS[5]
   },
 
   // ── Alex Rivera WSRs ──
   {
-    id: 'dd000020', user_id: ALEX_ID, project_id: DOD_ZT_ID,
+    id: 'dd000020', user_id: ALEX_ID, project_id: pid(10),
     week_ending: '2025-02-21', report_type: 'technical',
     accomplishments: 'Completed Pillar 2 (Device) implementation for 1,847 managed endpoints enrolled in Microsoft Endpoint Manager. Achieved 99.1% compliance posture on DISA STIG benchmarks. Delivered Pillar 2 Technical Design Document v2.1 accepted by government COR.',
     blockers: 'Legacy NIPRNET printers (143 devices) cannot support TPM-based attestation — documenting exception request for CIO review.',
@@ -226,10 +248,10 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: DoD Zero Trust implementation — Device pillar work',
     work_type_tags: ['Zero Trust Architecture', 'Cloud Infrastructure', 'Cybersecurity', 'DevSecOps'],
     submitted_at: '2025-02-21T17:45:00Z', created_at: '2025-02-21T17:45:00Z', updated_at: '2025-02-21T17:45:00Z',
-    user: DEMO_USERS[4], project: DEMO_PROJECTS[1]
+    user: DEMO_USERS[4], project: DEMO_PROJECTS[9]
   },
   {
-    id: 'dd000021', user_id: ALEX_ID, project_id: DOD_ZT_ID,
+    id: 'dd000021', user_id: ALEX_ID, project_id: pid(10),
     week_ending: '2025-02-14', report_type: 'technical',
     accomplishments: 'Deployed Azure AD Conditional Access policies across all 3 DoD tenant environments. Configured Privileged Identity Management (PIM) for 89 privileged accounts. Zero production incidents during rollout. Wrote automated deployment runbook used by DoD IT admins.',
     blockers: 'Azure AD Premium P2 license procurement pending DITAP approval — 2 weeks delayed.',
@@ -238,12 +260,12 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: Identity & Access Management (IAM) Zero Trust implementation',
     work_type_tags: ['Zero Trust Architecture', 'Cloud Infrastructure', 'DevSecOps'],
     submitted_at: '2025-02-14T16:20:00Z', created_at: '2025-02-14T16:20:00Z', updated_at: '2025-02-14T16:20:00Z',
-    user: DEMO_USERS[4], project: DEMO_PROJECTS[1]
+    user: DEMO_USERS[4], project: DEMO_PROJECTS[9]
   },
 
   // ── Jordan Lee WSRs ──
   {
-    id: 'dd000030', user_id: JORDAN_ID, project_id: CISA_ID,
+    id: 'dd000030', user_id: JORDAN_ID, project_id: pid(6),
     week_ending: '2025-02-21', report_type: 'pm',
     accomplishments: 'Submitted February Monthly Status Report to CISA CO — accepted without revisions. Facilitated 3 workstream status meetings (12 action items captured, 9 closed). Completed risk register update: 2 risks de-escalated, 1 new risk added (personnel attrition).',
     blockers: 'Awaiting CISA approval on CDR-021 (Security Plan Update) — submitted Feb 5, no response after 16 days. Sent follow-up with PM.',
@@ -252,10 +274,10 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: Program Management / reporting',
     work_type_tags: ['Program Management', 'Reporting', 'CISA Mission Support', 'Stakeholder Engagement'],
     submitted_at: '2025-02-21T16:55:00Z', created_at: '2025-02-21T16:55:00Z', updated_at: '2025-02-21T16:55:00Z',
-    user: DEMO_USERS[5], project: DEMO_PROJECTS[0]
+    user: DEMO_USERS[5], project: DEMO_PROJECTS[5]
   },
   {
-    id: 'dd000031', user_id: JORDAN_ID, project_id: FBI_ID,
+    id: 'dd000031', user_id: JORDAN_ID, project_id: pid(13),
     week_ending: '2025-02-14', report_type: 'pm',
     accomplishments: 'Completed FBI Cybersecurity Platform gap analysis — identified 11 process gaps and 3 tooling gaps across 5 capability domains. Presented findings to FBI CISO and received approval to proceed to Phase 2. Documented 47-page gap analysis report.',
     blockers: 'FBI security clearance adjudication for 2 new team members outstanding (submitted 4 months ago). Limiting our ability to staff properly.',
@@ -264,12 +286,12 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: FBI PM activities — gap analysis and stakeholder engagement',
     work_type_tags: ['Program Management', 'Stakeholder Engagement', 'Reporting'],
     submitted_at: '2025-02-14T17:00:00Z', created_at: '2025-02-14T17:00:00Z', updated_at: '2025-02-14T17:00:00Z',
-    user: DEMO_USERS[5], project: DEMO_PROJECTS[2]
+    user: DEMO_USERS[5], project: DEMO_PROJECTS[12]
   },
 
   // ── Taylor Kim WSRs ──
   {
-    id: 'dd000040', user_id: TAYLOR_ID, project_id: DOS_ID,
+    id: 'dd000040', user_id: TAYLOR_ID, project_id: pid(16),
     week_ending: '2025-02-21', report_type: 'technical',
     accomplishments: 'Migrated 3 legacy DOS SharePoint sites to Modern Experience — 8,400 documents migrated with 100% fidelity validation. Completed Power Automate workflow replacement for 6 manual approval processes, saving estimated 12 staff hours/week.',
     blockers: 'DOS Outlook data loss prevention policy blocking external sharing needed for vendor coordination — submitted IT exception request.',
@@ -278,7 +300,7 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
     hours_narrative: '40 hrs: DOS digital transformation / M365 work',
     work_type_tags: ['Cloud Infrastructure', 'Systems Integration', 'Software Development'],
     submitted_at: '2025-02-21T15:40:00Z', created_at: '2025-02-21T15:40:00Z', updated_at: '2025-02-21T15:40:00Z',
-    user: DEMO_USERS[6], project: DEMO_PROJECTS[3]
+    user: DEMO_USERS[6], project: DEMO_PROJECTS[15]
   }
 ];
 
@@ -286,7 +308,7 @@ export const DEMO_WSRS: (WeeklyStatusReport & { user?: User; project?: Project }
 export const DEMO_MSRS: (MonthlyStatusReport & { project?: Project; generator?: User })[] = [
   {
     id: 'ee000001',
-    project_id: CISA_ID,
+    project_id: pid(6),
     month: '2025-01-01',
     generated_by: DEMO_USER_ID,
     ai_summary: `# Monthly Status Report — DHS CISA Cyber Defense Task Order 5
@@ -324,12 +346,12 @@ February focus areas include completing the FISMA Annual Assessment, deploying P
     status: 'finalized',
     created_at: '2025-02-03T10:15:00Z',
     updated_at: '2025-02-03T10:15:00Z',
-    project: DEMO_PROJECTS[0],
+    project: DEMO_PROJECTS[5],
     generator: DEMO_USER
   },
   {
     id: 'ee000002',
-    project_id: DOD_ZT_ID,
+    project_id: pid(10),
     month: '2025-01-01',
     generated_by: SARAH_ID,
     ai_summary: `# Monthly Status Report — DoD Zero Trust Architecture Implementation
@@ -360,7 +382,7 @@ February will focus on completing Pillar 2 device compliance rollout to all 1,84
     status: 'draft',
     created_at: '2025-02-05T14:30:00Z',
     updated_at: '2025-02-05T14:30:00Z',
-    project: DEMO_PROJECTS[1],
+    project: DEMO_PROJECTS[9],
     generator: DEMO_USERS[1]
   }
 ];
@@ -424,13 +446,13 @@ export const DEMO_OVERRIDES = [
   {
     id: 'hh000001',
     user_id: ALEX_ID,
-    project_id: DOD_ZT_ID,
+    project_id: pid(10),
     override_manager_id: SARAH_ID,
     reason: 'Sarah is program manager for DoD ZT and needs visibility into Alex\'s work',
     created_by: DEMO_USER_ID,
     created_at: '2024-06-01T09:00:00Z',
     user: DEMO_USERS[4],
-    project: DEMO_PROJECTS[1],
+    project: DEMO_PROJECTS[9],
     override_manager: DEMO_USERS[1]
   }
 ];

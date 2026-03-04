@@ -14,7 +14,7 @@
 
 <div class="flex h-screen bg-gray-50 dark:bg-dark-700 overflow-hidden">
   <!-- Sidebar -->
-  <Sidebar bind:open={sidebarOpen} user={data.appUser} />
+  <Sidebar bind:open={sidebarOpen} user={data.appUser} managedProjects={data.managedProjects} isAdmin={data.isAdmin} />
 
   <!-- Overlay for mobile -->
   {#if sidebarOpen}

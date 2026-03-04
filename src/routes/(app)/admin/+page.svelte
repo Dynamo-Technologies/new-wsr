@@ -10,7 +10,7 @@
   export let data;
   export let form;
 
-  let activeTab: 'projects' | 'users' | 'tags' | 'overrides' | 'lattice' = 'projects';
+  let activeTab: 'projects' | 'users' | 'tags' | 'overrides' = 'projects';
   function setTab(id: string) { activeTab = id as typeof activeTab; }
 
   // Projects state
@@ -33,8 +33,6 @@
   let showOverrideModal = false;
   let savingOverride = false;
 
-  // Lattice sync state
-  let syncing = false;
 
   $: filteredUsers = data.users.filter((u) =>
     u.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -62,8 +60,7 @@
         updateProject: () => (savingProject = false),
         updateUser: () => (savingUser = false),
         createTag: () => (savingTag = false),
-        createOverride: () => (savingOverride = false),
-        triggerSync: () => (syncing = false)
+        createOverride: () => (savingOverride = false)
       };
       loadingMap[action]?.();
 
@@ -85,13 +82,12 @@
 </script>
 
 <!-- Tabs -->
-<div class="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto">
+<div class="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-6 flex-wrap">
   {#each [
     { id: 'projects', label: 'Projects', count: data.projects.length },
     { id: 'users', label: 'Users', count: data.users.length },
     { id: 'tags', label: 'Work Type Tags', count: data.tags.length },
-    { id: 'overrides', label: 'Manager Overrides', count: data.overrides.length },
-    { id: 'lattice', label: 'Lattice Sync', count: 0 }
+    { id: 'overrides', label: 'Manager Overrides', count: data.overrides.length }
   ] as tab}
     <button
       on:click={() => setTab(tab.id)}
@@ -308,75 +304,6 @@
     {/if}
   </div>
 
-<!-- ===== LATTICE SYNC TAB ===== -->
-{:else if activeTab === 'lattice'}
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <!-- Sync trigger -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="section-title mb-0">Org Chart Sync</h2>
-      </div>
-      <div class="card-body">
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Sync the organization chart from Lattice. This updates manager-employee relationships
-          for the entire team. Runs automatically every Sunday at midnight.
-        </p>
-        <form
-          method="POST"
-          action="?/triggerSync"
-          use:enhance={() => {
-            syncing = true;
-            return async ({ result, update }) => {
-              await update();
-              syncing = false;
-              if (result.type === 'success') toast.success('Lattice sync completed successfully');
-              else toast.error('Sync failed — check logs for details');
-            };
-          }}
-        >
-          <button type="submit" class="btn-primary" disabled={syncing}>
-            {#if syncing}
-              <Spinner size="sm" color="text-white" />
-              Syncing...
-            {:else}
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-              </svg>
-              Trigger Manual Sync
-            {/if}
-          </button>
-        </form>
-      </div>
-    </div>
-
-    <!-- Sync logs -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="section-title mb-0">Sync History</h2>
-      </div>
-      {#if data.syncLogs.length === 0}
-        <EmptyState title="No sync history" message="Sync history will appear here." icon="inbox" />
-      {:else}
-        <div class="divide-y divide-gray-100 dark:divide-gray-800">
-          {#each data.syncLogs as log}
-            <div class="px-4 py-3 flex items-center gap-3">
-              <span class="badge {log.status === 'success' ? 'badge-green' : 'badge-red'}">
-                {log.status}
-              </span>
-              <div class="flex-1">
-                <p class="text-sm text-gray-700 dark:text-gray-300">{log.records_synced} records synced</p>
-                {#if log.error_message}
-                  <p class="text-xs text-red-500 dark:text-red-400">{log.error_message}</p>
-                {/if}
-              </div>
-              <span class="text-xs text-gray-400 dark:text-gray-500">{formatDate(log.sync_date, 'MMM d, h:mm a')}</span>
-            </div>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </div>
 {/if}
 
 <!-- ===== MODALS ===== -->

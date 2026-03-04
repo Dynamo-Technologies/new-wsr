@@ -2,7 +2,7 @@
   import { enhance } from '$app/forms';
   import { toast } from '$lib/stores/toast';
   import { formatDate, getWeekLabel } from '$lib/utils/dates';
-  import { downloadMarkdown, downloadAsHTML } from '$lib/utils/export';
+  import { downloadMarkdown, printAsPDF } from '$lib/utils/export';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import TagInput from '$lib/components/ui/TagInput.svelte';
@@ -74,9 +74,8 @@
     toast.success('Exported as Markdown');
   }
 
-  function exportHTML() {
-    downloadAsHTML('Past Performance Narrative', narrative, 'Past_Performance_Narrative');
-    toast.success('Exported as HTML (printable to PDF)');
+  function exportPDF() {
+    printAsPDF('Past Performance Narrative', narrative);
   }
 </script>
 
@@ -321,11 +320,11 @@
       </svg>
       Export Markdown
     </button>
-    <button class="btn-secondary" on:click={exportHTML}>
+    <button class="btn-secondary" on:click={exportPDF}>
       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
       </svg>
-      Export HTML/PDF
+      Export PDF
     </button>
     <button class="btn-primary" on:click={() => (narrativeModalOpen = false)}>Close</button>
   </svelte:fragment>

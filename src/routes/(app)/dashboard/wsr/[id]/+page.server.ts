@@ -1,29 +1,16 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { ALL_WSRS, DEMO_TAGS, DEMO_PROJECTS, DEMO_USER_ID } from '$lib/demo/data';
 
-export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession, isDemoMode } }) => {
+export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
   const { user } = await safeGetSession();
   if (!user) throw redirect(303, '/login');
-
-  if (isDemoMode) {
-    const wsr = ALL_WSRS.find(w => w.id === params.id);
-    if (!wsr) throw error(404, 'WSR not found');
-    return {
-      wsr,
-      tags: DEMO_TAGS,
-      projects: DEMO_PROJECTS,
-      canEdit: wsr.user_id === DEMO_USER_ID,
-      isManagerView: wsr.user_id !== DEMO_USER_ID
-    };
-  }
 
   const { data: wsr, error: wsrError } = await supabase
     .from('weekly_status_reports')
     .select(`
       *,
-      user:users(id, full_name, email, role),
-      project:projects(id, name, client_agency, contract_number)
+      user:profiles(id, full_name, email, role),
+      project:projects(id, name)
     `)
     .eq('id', params.id)
     .single();
@@ -32,37 +19,30 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
     throw error(404, 'WSR not found');
   }
 
-  // Only allow viewing own WSRs or manager can view team WSRs
+  // Check access: own WSR or admin
   const { data: appUser } = await supabase
-    .from('users')
+    .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
   const isOwner = wsr.user_id === user.id;
-  const isManagerOrAdmin = ['manager', 'director', 'vp', 'admin'].includes(appUser?.role ?? '');
+  const isManagerOrAdmin = ['manager', 'director', 'admin'].includes(appUser?.role ?? '');
 
   if (!isOwner && !isManagerOrAdmin) {
     throw error(403, 'Access denied');
   }
 
-  // Load tags for edit form
-  const { data: tags } = await supabase
-    .from('work_type_tags')
-    .select('id, name, category')
-    .order('category')
-    .order('name');
-
   // Load projects for edit form
   const { data: projects } = await supabase
     .from('projects')
-    .select('id, name, client_agency')
+    .select('id, name')
     .eq('is_active', true)
     .order('name');
 
   return {
     wsr,
-    tags: tags ?? [],
+    tags: [],
     projects: projects ?? [],
     canEdit: isOwner,
     isManagerView: isManagerOrAdmin && !isOwner
@@ -93,8 +73,7 @@ export const actions: Actions = {
       this_week: formData.get('this_week') as string,
       next_week: formData.get('next_week') as string,
       hours_narrative: formData.get('hours_narrative') as string,
-      work_type_tags: formData.getAll('work_type_tags') as string[],
-      updated_at: new Date().toISOString()
+      work_type_tags: formData.getAll('work_type_tags') as string[]
     };
 
     const { error: updateError } = await supabase
@@ -105,11 +84,6 @@ export const actions: Actions = {
     if (updateError) {
       return fail(500, { error: updateError.message });
     }
-
-    // Re-generate embedding
-    supabase.functions.invoke('generate-embeddings', {
-      body: { wsr_id: params.id }
-    });
 
     return { success: true };
   },
