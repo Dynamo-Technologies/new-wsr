@@ -60,6 +60,7 @@ export interface WeeklyStatusReport {
   blockers: string | null;
   this_week: string | null;
   next_week: string | null;
+  hours: number | null;
   hours_narrative: string | null;
   work_type_tags: string[];
   submitted_at: string | null;

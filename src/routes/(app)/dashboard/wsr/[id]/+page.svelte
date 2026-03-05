@@ -163,9 +163,15 @@
             <label class="label" for="edit-next-week">Next Week</label>
             <textarea name="next_week" id="edit-next-week" class="textarea" rows="3" value={data.wsr.next_week ?? ''}></textarea>
           </div>
-          <div>
-            <label class="label" for="edit-hours">Hours Narrative</label>
-            <textarea name="hours_narrative" id="edit-hours" class="textarea" rows="2" value={data.wsr.hours_narrative ?? ''}></textarea>
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div>
+              <label class="label" for="edit-hours">Hours</label>
+              <input type="number" name="hours" id="edit-hours" class="input" min="0" max="168" step="0.5" value={data.wsr.hours ?? ''} />
+            </div>
+            <div class="sm:col-span-3">
+              <label class="label" for="edit-hours-narrative">Hours Narrative</label>
+              <textarea name="hours_narrative" id="edit-hours-narrative" class="textarea" rows="2" value={data.wsr.hours_narrative ?? ''}></textarea>
+            </div>
           </div>
           <div>
             <TagInput options={currentTags} bind:selected={selectedTags} label="Work Type Tags" />
@@ -218,10 +224,14 @@
           </div>
         {/if}
 
-        {#if data.wsr.hours_narrative}
+        {#if data.wsr.hours != null || data.wsr.hours_narrative}
           <div>
             <h3 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Hours</h3>
-            <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{data.wsr.hours_narrative}</p>
+            {#if data.wsr.hours != null}
+              <p class="text-sm font-semibold text-gray-900 dark:text-gray-100">{data.wsr.hours} hrs</p>
+            {:else}
+              <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{data.wsr.hours_narrative}</p>
+            {/if}
           </div>
         {/if}
 

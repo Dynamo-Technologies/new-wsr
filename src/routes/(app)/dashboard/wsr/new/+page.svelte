@@ -13,9 +13,35 @@
   let loading = false;
   let reportType: 'technical' | 'pm' | 'admin' = 'technical';
   let selectedTags: string[] = [];
+  let multiProject = false;
 
   // Default week ending to upcoming Friday
   const defaultWeekEnding = toInputDate(getUpcomingFriday());
+
+  // Project entries state
+  interface ProjectEntry {
+    project_id: string;
+    hours: string;
+    description: string;
+  }
+
+  let entries: ProjectEntry[] = [{ project_id: '', hours: '', description: '' }];
+
+  function addEntry() {
+    entries = [...entries, { project_id: '', hours: '', description: '' }];
+  }
+
+  function removeEntry(index: number) {
+    entries = entries.filter((_, i) => i !== index);
+  }
+
+  // Get available projects for a given entry (exclude already-selected projects)
+  function availableProjects(entryIndex: number) {
+    const selectedIds = entries
+      .map((e, i) => (i !== entryIndex ? e.project_id : null))
+      .filter(Boolean);
+    return data.projects.filter((p: { id: string }) => !selectedIds.includes(p.id));
+  }
 
   // Tag options by report type
   const tagsByType = {
@@ -37,8 +63,12 @@
 
   $: currentTags = tagsByType[reportType] ?? [];
   $: {
-    // Reset tags when type changes
     selectedTags = selectedTags.filter((t) => currentTags.includes(t));
+  }
+
+  // When multiProject is unchecked, trim to first entry only
+  $: if (!multiProject && entries.length > 1) {
+    entries = [entries[0]];
   }
 
   const reportTypeOptions = [
@@ -67,7 +97,7 @@
     if (result.type === 'redirect') {
       toast.success('WSR submitted successfully!');
     } else if (result.type === 'failure') {
-      toast.error('Failed to submit WSR. Please try again.');
+      toast.error(form?.error || 'Failed to submit WSR. Please try again.');
     }
   }
 </script>
@@ -102,26 +132,13 @@
       };
     }}
   >
-    <!-- Section 1: Basic Info -->
+    <!-- Section 1: Report Details -->
     <div class="card mb-6">
       <div class="card-header">
         <h2 class="section-title mb-0">Report Details</h2>
       </div>
       <div class="card-body space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Project -->
-          <div class="sm:col-span-2">
-            <label class="label" for="project_id">Project <span class="text-red-500 dark:text-red-400">*</span></label>
-            <select name="project_id" id="project_id" class="select" required>
-              <option value="">Select a project...</option>
-              {#each data.projects as project}
-                <option value={project.id}>
-                  {project.name}
-                </option>
-              {/each}
-            </select>
-          </div>
-
           <!-- Week Ending -->
           <div>
             <label class="label" for="week_ending">
@@ -138,101 +155,173 @@
             <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Auto-set to upcoming Friday</p>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Section 2: Report Type -->
-    <div class="card mb-6">
-      <div class="card-header">
-        <h2 class="section-title mb-0">Report Type <span class="text-red-500 dark:text-red-400">*</span></h2>
-      </div>
-      <div class="card-body">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {#each reportTypeOptions as opt}
-            <label
-              class="relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150
-                     {reportType === opt.value
-                       ? 'border-primary bg-primary-50 dark:bg-primary-950/30'
-                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-dark-50'}"
-            >
-              <input
-                type="radio"
-                name="report_type"
-                value={opt.value}
-                class="sr-only"
-                bind:group={reportType}
-                required
-              />
-              <div class="mt-0.5">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="{reportType === opt.value ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}"
-                >
-                  {@html opt.icon}
-                </svg>
-              </div>
-              <div>
-                <p class="text-sm font-semibold {reportType === opt.value ? 'text-primary' : 'text-gray-900 dark:text-gray-100'}">
-                  {opt.label}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.description}</p>
-              </div>
-              {#if reportType === opt.value}
-                <div class="absolute top-3 right-3 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        <!-- Report Type -->
+        <div>
+          <label class="label">Report Type <span class="text-red-500 dark:text-red-400">*</span></label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1">
+            {#each reportTypeOptions as opt}
+              <label
+                class="relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all duration-150
+                       {reportType === opt.value
+                         ? 'border-primary bg-primary-50 dark:bg-primary-950/30'
+                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-dark-50'}"
+              >
+                <input
+                  type="radio"
+                  name="report_type"
+                  value={opt.value}
+                  class="sr-only"
+                  bind:group={reportType}
+                  required
+                />
+                <div class="mt-0.5">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="{reportType === opt.value ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}"
+                  >
+                    {@html opt.icon}
+                  </svg>
                 </div>
-              {/if}
-            </label>
-          {/each}
+                <div>
+                  <p class="text-sm font-semibold {reportType === opt.value ? 'text-primary' : 'text-gray-900 dark:text-gray-100'}">
+                    {opt.label}
+                  </p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{opt.description}</p>
+                </div>
+                {#if reportType === opt.value}
+                  <div class="absolute top-3 right-3 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  </div>
+                {/if}
+              </label>
+            {/each}
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Section 3: Report Content (conditional fields) -->
+    <!-- Section 2: Project Entries -->
+    <input type="hidden" name="entry_count" value={multiProject ? entries.length : 1} />
+
+    {#each (multiProject ? entries : [entries[0]]) as entry, i}
+      <div class="card mb-4">
+        <div class="card-header flex items-center justify-between">
+          <h2 class="section-title mb-0">
+            {#if multiProject}
+              Project {i + 1}
+            {:else}
+              Project & Hours
+            {/if}
+          </h2>
+          {#if multiProject && entries.length > 1 && i > 0}
+            <button
+              type="button"
+              on:click={() => removeEntry(i)}
+              class="text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+            >
+              Remove
+            </button>
+          {/if}
+        </div>
+        <div class="card-body space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <!-- Project -->
+            <div class="sm:col-span-3">
+              <label class="label" for="project_id_{i}">Project <span class="text-red-500 dark:text-red-400">*</span></label>
+              <select name="project_id_{i}" id="project_id_{i}" class="select" required bind:value={entry.project_id}>
+                <option value="">Select a project...</option>
+                {#each availableProjects(i) as project}
+                  <option value={project.id}>
+                    {project.name}
+                  </option>
+                {/each}
+              </select>
+            </div>
+
+            <!-- Hours -->
+            <div>
+              <label class="label" for="hours_{i}">Hours <span class="text-red-500 dark:text-red-400">*</span></label>
+              <input
+                type="number"
+                name="hours_{i}"
+                id="hours_{i}"
+                class="input"
+                min="0"
+                max="168"
+                step="0.5"
+                placeholder="40"
+                required
+                bind:value={entry.hours}
+              />
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="label" for="description_{i}">
+              What did you work on? <span class="text-red-500 dark:text-red-400">*</span>
+            </label>
+            <textarea
+              name="description_{i}"
+              id="description_{i}"
+              class="textarea"
+              placeholder="Describe your accomplishments and tasks for this project"
+              rows="4"
+              required
+              bind:value={entry.description}
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    {/each}
+
+    <!-- Multi-project toggle -->
+    <div class="mb-6">
+      <label class="flex items-center gap-3 cursor-pointer group">
+        <div class="relative">
+          <input
+            type="checkbox"
+            bind:checked={multiProject}
+            class="sr-only peer"
+          />
+          <div class="w-10 h-6 bg-gray-200 dark:bg-dark-100 rounded-full peer-checked:bg-primary transition-colors duration-200"></div>
+          <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 peer-checked:translate-x-4"></div>
+        </div>
+        <span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+          I billed another project this week
+        </span>
+      </label>
+
+      {#if multiProject}
+        <button
+          type="button"
+          on:click={addEntry}
+          class="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary-600 font-medium transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
+          </svg>
+          Add another project
+        </button>
+      {/if}
+    </div>
+
+    <!-- Section 3: Shared Fields -->
     <div class="card mb-6">
       <div class="card-header">
-        <h2 class="section-title mb-0">Status Report Content</h2>
+        <h2 class="section-title mb-0">Blockers & Next Week</h2>
       </div>
       <div class="card-body space-y-5">
-        <!-- Accomplishments - all types -->
-        <div>
-          <label class="label" for="accomplishments">
-            Accomplishments <span class="text-red-500 dark:text-red-400">*</span>
-          </label>
-          <textarea
-            name="accomplishments"
-            id="accomplishments"
-            class="textarea"
-            placeholder="Describe your accomplishments this week"
-            rows="4"
-            required
-          ></textarea>
-        </div>
-
-        <!-- This Week -->
-        <div>
-          <label class="label" for="this_week">
-            Tasks This Week <span class="text-red-500 dark:text-red-400">*</span>
-          </label>
-          <textarea
-            name="this_week"
-            id="this_week"
-            class="textarea"
-            placeholder="List tasks worked on this week"
-            rows="3"
-            required
-          ></textarea>
-        </div>
-
-        <!-- Blockers / Risks -->
+        <!-- Blockers -->
         <div>
           <label class="label" for="blockers">
             Blockers <span class="text-red-500 dark:text-red-400">*</span>
@@ -241,7 +330,7 @@
             name="blockers"
             id="blockers"
             class="textarea"
-            placeholder="Describe any blockers preventing progress"
+            placeholder="Describe any blockers preventing progress (or 'None')"
             rows="2"
             required
           ></textarea>
@@ -261,19 +350,6 @@
             required
           ></textarea>
         </div>
-
-        <!-- Hours Narrative -->
-        <div>
-          <label class="label" for="hours_narrative">Hours Narrative <span class="text-red-500 dark:text-red-400">*</span></label>
-          <textarea
-            name="hours_narrative"
-            id="hours_narrative"
-            class="textarea"
-            placeholder="Briefly describe how your hours were allocated (e.g., '32 hrs contract work, 8 hrs proposal support')"
-            rows="2"
-            required
-          ></textarea>
-        </div>
       </div>
     </div>
 
@@ -288,7 +364,6 @@
         </p>
         <TagInput options={currentTags} bind:selected={selectedTags} />
 
-        <!-- Hidden inputs for selected tags -->
         {#each selectedTags as tag}
           <input type="hidden" name="work_type_tags" value={tag} />
         {/each}

@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
   const { data: wsrs, error: wsrError } = await supabase
     .from('weekly_status_reports')
     .select(`
-      id, week_ending, report_type, accomplishments, submitted_at, work_type_tags,
+      id, week_ending, report_type, accomplishments, submitted_at, work_type_tags, hours,
       project:projects(id, name)
     `)
     .eq('user_id', user.id)

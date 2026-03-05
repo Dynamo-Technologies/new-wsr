@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(curl -s -b \"demo_auth=true\" \"http://localhost:5174/dashboard\")",
-      "Bash(# Check the dev server terminal output for errors - kill and restart pkill -f \"\"vite dev\"\" sleep 1 npm run dev 2>&1 & sleep 5 curl -s -b \"\"demo_auth=true\"\" \"\"http://localhost:5173/dashboard\"\")"
+      "Bash(# Check the dev server terminal output for errors - kill and restart pkill -f \"\"vite dev\"\" sleep 1 npm run dev 2>&1 & sleep 5 curl -s -b \"\"demo_auth=true\"\" \"\"http://localhost:5173/dashboard\"\")",
+      "Bash(npm run check)"
     ]
   }
 }
