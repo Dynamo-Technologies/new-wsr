@@ -23,34 +23,89 @@ export const actions: Actions = {
 
     const formData = await request.formData();
 
-    const data = {
-      user_id: user.id,
-      project_id: formData.get('project_id') as string,
-      week_ending: formData.get('week_ending') as string,
-      report_type: formData.get('report_type') as string,
-      accomplishments: formData.get('accomplishments') as string,
-      blockers: formData.get('blockers') as string,
-      this_week: formData.get('this_week') as string,
-      next_week: formData.get('next_week') as string,
-      hours_narrative: formData.get('hours_narrative') as string,
-      work_type_tags: formData.getAll('work_type_tags') as string[]
-    };
+    // Shared fields
+    const week_ending = formData.get('week_ending') as string;
+    const report_type = formData.get('report_type') as string;
+    const blockers = formData.get('blockers') as string;
+    const next_week = formData.get('next_week') as string;
+    const work_type_tags = formData.getAll('work_type_tags') as string[];
 
-    // Validate required fields
-    if (!data.project_id || !data.week_ending || !data.report_type) {
-      return fail(400, { error: 'Project, week ending, and report type are required' });
+    if (!week_ending || !report_type) {
+      return fail(400, { error: 'Week ending and report type are required' });
     }
 
-    const { data: inserted, error } = await supabase
+    // Parse project entries
+    const entryCount = parseInt(formData.get('entry_count') as string, 10) || 1;
+    const entries = [];
+    const seenProjects = new Set<string>();
+
+    for (let i = 0; i < entryCount; i++) {
+      const project_id = formData.get(`project_id_${i}`) as string;
+      const hoursRaw = formData.get(`hours_${i}`) as string;
+      const hours = parseFloat(hoursRaw);
+      const description = formData.get(`description_${i}`) as string;
+
+      if (!project_id) {
+        return fail(400, { error: `Entry ${i + 1}: Please select a project` });
+      }
+      if (!description?.trim()) {
+        return fail(400, { error: `Entry ${i + 1}: Please describe the work you did` });
+      }
+      if (isNaN(hours) || hours < 0 || hours > 168) {
+        return fail(400, { error: `Entry ${i + 1}: Hours must be between 0 and 168` });
+      }
+      if (seenProjects.has(project_id)) {
+        return fail(400, { error: 'Each project can only appear once per report' });
+      }
+      seenProjects.add(project_id);
+
+      entries.push({ project_id, hours, description });
+    }
+
+    if (entries.length === 0) {
+      return fail(400, { error: 'At least one project entry is required' });
+    }
+
+    // Check for existing WSRs for these project/week combos
+    const { data: existing } = await supabase
       .from('weekly_status_reports')
-      .insert(data)
-      .select('id')
-      .single();
+      .select('project_id')
+      .eq('user_id', user.id)
+      .eq('week_ending', week_ending)
+      .in('project_id', entries.map(e => e.project_id));
+
+    if (existing && existing.length > 0) {
+      return fail(400, {
+        error: `You already have a WSR for one or more of these projects for week ending ${week_ending}. Edit the existing report instead.`
+      });
+    }
+
+    // Build insert rows
+    const rows = entries.map(entry => ({
+      user_id: user.id,
+      project_id: entry.project_id,
+      week_ending,
+      report_type,
+      accomplishments: entry.description,
+      this_week: entry.description,
+      blockers,
+      next_week,
+      hours: entry.hours,
+      hours_narrative: `${entry.hours} hrs`,
+      work_type_tags
+    }));
+
+    const { error } = await supabase
+      .from('weekly_status_reports')
+      .insert(rows);
 
     if (error) {
+      if (error.code === '23505') {
+        return fail(400, { error: 'A WSR already exists for one of these project/week combinations.' });
+      }
       return fail(500, { error: error.message });
     }
 
-    throw redirect(303, `/dashboard?submitted=true`);
+    throw redirect(303, '/dashboard?submitted=true');
   }
 };

@@ -67,11 +67,15 @@ export const actions: Actions = {
       return fail(403, { error: 'Not authorized to edit this WSR' });
     }
 
-    const updates = {
+    const hoursRaw = formData.get('hours') as string;
+    const hours = hoursRaw ? parseFloat(hoursRaw) : null;
+
+    const updates: Record<string, unknown> = {
       accomplishments: formData.get('accomplishments') as string,
       blockers: formData.get('blockers') as string,
       this_week: formData.get('this_week') as string,
       next_week: formData.get('next_week') as string,
+      hours,
       hours_narrative: formData.get('hours_narrative') as string,
       work_type_tags: formData.getAll('work_type_tags') as string[]
     };

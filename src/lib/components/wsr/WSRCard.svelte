@@ -6,6 +6,7 @@
     week_ending: string;
     report_type: string;
     accomplishments?: string | null;
+    hours?: number | null;
     work_type_tags?: string[];
     submitted_at?: string | null;
     project?: { id: string; name: string; client_agency?: string | null } | null;
@@ -50,6 +51,9 @@
         <span class="badge {typeColors[wsr.report_type] ?? 'badge-gray'}">
           {typeLabels[wsr.report_type] ?? wsr.report_type}
         </span>
+        {#if wsr.hours != null}
+          <span class="badge badge-green">{wsr.hours} hrs</span>
+        {/if}
       </div>
 
       <!-- Accomplishments preview -->

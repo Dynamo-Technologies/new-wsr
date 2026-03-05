@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
   let wsrQuery = supabase
     .from('weekly_status_reports')
     .select(`
-      id, week_ending, report_type, accomplishments, submitted_at, work_type_tags,
+      id, week_ending, report_type, accomplishments, submitted_at, work_type_tags, hours,
       user:profiles(id, full_name),
       project:projects(id, name)
     `)
