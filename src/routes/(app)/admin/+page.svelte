@@ -128,9 +128,6 @@
               <tr class="table-row">
                 <td class="table-cell">
                   <div class="font-medium">{project.name}</div>
-                  {#if project.contract_number}
-                    <div class="text-xs text-gray-400 dark:text-gray-500">#{project.contract_number}</div>
-                  {/if}
                 </td>
                 <td class="table-cell">{project.pm_name ?? '—'}</td>
                 <td class="table-cell">
@@ -325,20 +322,8 @@
         <input type="text" name="name" id="p-name" class="input" value={editingProject?.name ?? ''} required />
       </div>
       <div>
-        <label class="label" for="p-contract">Contract Number</label>
-        <input type="text" name="contract_number" id="p-contract" class="input" value={editingProject?.contract_number ?? ''} />
-      </div>
-      <div>
         <label class="label" for="p-pm">Program Manager</label>
         <input type="text" name="pm_name" id="p-pm" class="input" value={editingProject?.pm_name ?? ''} placeholder="e.g., John Smith" />
-      </div>
-      <div>
-        <label class="label" for="p-start">Start Date</label>
-        <input type="date" name="start_date" id="p-start" class="input" value={editingProject?.start_date ?? ''} />
-      </div>
-      <div>
-        <label class="label" for="p-end">End Date</label>
-        <input type="date" name="end_date" id="p-end" class="input" value={editingProject?.end_date ?? ''} />
       </div>
       {#if editingProject}
         <div>
