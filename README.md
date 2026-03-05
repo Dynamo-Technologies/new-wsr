@@ -1,6 +1,8 @@
 # Dynamo WSR Platform
 
-Internal weekly status report management platform for Dynamo, a 350-person federal contracting team. Employees submit WSRs, managers generate AI-powered monthly summaries, and BD teams search past work for proposal narratives.
+Internal weekly status report management platform for Dynamo, a 350-person federal contracting team. Employees submit WSRs, managers generate AI-powered monthly summaries and quarterly reviews, and BD teams search past work for proposal-ready narratives.
+
+**Production URL:** [https://statusreport.dynamo.works](https://statusreport.dynamo.works)
 
 ## Tech Stack
 
@@ -8,20 +10,20 @@ Internal weekly status report management platform for Dynamo, a 350-person feder
 |-------|-----------|
 | Frontend | SvelteKit 2 + Svelte 4 + TypeScript |
 | Styling | Tailwind CSS 3 (light/dark mode) |
-| Backend | Supabase (PostgreSQL + pgvector, Auth) |
+| Backend | Supabase (PostgreSQL + pgvector, Auth, RLS) |
 | Auth | Azure AD (Entra ID) OAuth via Supabase |
 | AI | AWS Bedrock — Claude Haiku 4.5 (summaries + narratives) |
-| Deployment | Docker + Nginx (or EC2 + PM2) |
+| Deployment | Docker + Nginx on EC2, behind company reverse proxy |
 
 ## Features
 
 - **Weekly Status Reports** — employees submit WSRs with accomplishments, blockers, next week plans, hours narrative, and work type tags
-- **Manager Dashboard** — view team WSRs with filters by member and week
-- **AI Monthly Status Reports** — generate consolidated monthly summaries from team WSRs via Claude, edit and finalize, export as Markdown or PDF
-- **Past Performance Search** — search WSRs by project, date range, tags, and keyword; generate proposal-ready narratives via AI with PDF export
-- **Admin Panel** — manage projects and users, role-based access control
+- **Manager Dashboard** — view team WSRs with filters by member, week, and project
+- **AI Monthly Status Reports** — generate consolidated monthly summaries from team WSRs via Claude Haiku 4.5; edit, finalize, and export as Markdown or PDF
+- **Quarterly Reviews** — AI-generated quarterly performance reviews for direct reports (planned)
+- **Past Performance Search** — search WSRs by project, date range, tags, and keyword; generate proposal-ready narratives via AI with Markdown/PDF export
+- **Admin Panel** — manage projects and users with role-based access control
 - **Dark Mode** — user-selectable with localStorage persistence
-- **Demo Mode** — full offline demo with realistic data (no Supabase required)
 
 ## Project Structure
 
@@ -39,7 +41,6 @@ src/
 │   ├── utils/
 │   │   ├── dates.ts             # Date helpers (date-fns)
 │   │   └── export.ts            # Markdown/PDF export
-│   ├── demo/                    # Demo mode data
 │   ├── config.ts                # Admin email list
 │   ├── supabase.ts              # Browser + server client factories
 │   └── types.ts                 # TypeScript interfaces
@@ -54,6 +55,7 @@ src/
 │       │       ├── new/         # Create WSR form
 │       │       └── [id]/        # View/edit WSR
 │       ├── manager/             # Team WSRs + MSR generation
+│       │   └── review/[user_id] # Quarterly review generator
 │       ├── bd/                  # Past performance search + narrative
 │       └── admin/               # Project + user management
 └── app.css                      # Tailwind + custom component classes
@@ -68,18 +70,17 @@ supabase/
 
 - Node.js 20+
 - Supabase project with Azure AD OAuth configured
-- AWS IAM credentials with `AmazonBedrockFullAccess` policy (for AI features)
+- AWS IAM credentials with Bedrock access (for AI features)
 
 ### Install & Run
 
 ```bash
+cp .env.example .env   # Fill in your Supabase + AWS credentials
 npm install
 npm run dev
 ```
 
-The app starts in **demo mode** by default when no Supabase credentials are configured.
-
-Open [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173](http://localhost:5173) and sign in with your Dynamo Microsoft 365 account.
 
 ### Available Scripts
 
@@ -92,31 +93,31 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Copy `.env.example` to `.env` and fill in your values:
 
 ```bash
-# Supabase
+# Supabase (required)
 PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
-# AWS Bedrock (for AI features)
+# AWS Bedrock (required for AI features)
 AWS_ACCESS_KEY_ID=AKIA...
 AWS_SECRET_ACCESS_KEY=...
-AWS_REGION=us-east-1
+AWS_REGION=us-east-2
 
-# Production
+# Production server
 PORT=3000
 NODE_ENV=production
 ```
 
-Azure AD OAuth is configured in the Supabase Dashboard under Authentication > Providers.
+Azure AD OAuth is configured in the Supabase Dashboard under Authentication > Providers — not in the `.env` file.
 
 ## Database Setup
 
-1. Run the schema migration in Supabase SQL Editor:
+1. Create a Supabase project and enable the `pgvector` extension
+2. Run the schema migration in Supabase SQL Editor:
    - `supabase/migrations/001_initial_schema.sql`
-
-2. Create the monthly status reports table:
+3. Create the monthly status reports table:
 
 ```sql
 CREATE TABLE IF NOT EXISTS public.monthly_status_reports (
@@ -151,7 +152,7 @@ CREATE POLICY "Authenticated users can update MSRs"
 | PM (by project) | Yes | Yes | Own projects | Own projects | No |
 | Admin | Yes | Yes | All projects | All projects | Yes |
 
-PMs are identified by matching `pm_email` on the `projects` table. Admins have `role = 'admin'` or their email is in the `ADMIN_EMAILS` list in `src/lib/config.ts`.
+PMs are identified by matching `pm_email` on the `projects` table. Admins have `role = 'admin'` in the `profiles` table or their email is in the `ADMIN_EMAILS` list in `src/lib/config.ts`.
 
 ### First Admin
 
@@ -160,17 +161,17 @@ After signing in via Azure AD, promote your account in Supabase SQL Editor:
 ```sql
 UPDATE public.profiles
 SET role = 'admin'
-WHERE email = 'your.email@dynamobigdata.com';
+WHERE email = 'your.email@dynamo.works';
 ```
 
 ## AI Features
 
-Both features use **AWS Bedrock** with **Claude Haiku 4.5** (`us.anthropic.claude-haiku-4-5-20251001-v1:0`), implemented in `src/lib/server/bedrock.ts`:
+Both features use **AWS Bedrock** with **Claude Haiku 4.5** (`us.anthropic.claude-haiku-4-5-20251001-v1:0`), implemented in `src/lib/server/bedrock.ts`.
 
 **Monthly Status Reports (MSR)**
 - Aggregates a month of WSRs for a project
 - Generates: Executive Summary, Key Accomplishments, Ongoing Work, Blockers & Risks, Next Month Outlook
-- Saved to database, editable, exportable as Markdown or PDF
+- Saved to database, editable by managers, exportable as Markdown or PDF
 
 **Past Performance Narrative**
 - Takes selected WSRs from search results
@@ -185,13 +186,13 @@ Credentials are read from `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` env vars
 PostgreSQL via Supabase with:
 
 - **pgvector** — 1536-dimension embeddings on WSRs for semantic search (IVFFlat index, cosine distance)
-- **RLS** — Row-level security policies enforce access control at the database level
+- **RLS** — row-level security policies enforce access control at the database level
 - **Helper functions** — `is_manager_of()`, `get_team_ids()`, `search_wsrs_by_embedding()`
-- **33 work type tags** seeded across technical, administrative, and specialized categories
+- **Work type tags** seeded across technical, administrative, and specialized categories
 
 ## Deployment
 
-### Docker (Recommended)
+### Docker (Production)
 
 ```bash
 docker compose build
@@ -200,17 +201,26 @@ docker compose up -d
 
 The compose stack runs:
 - **app** — SvelteKit Node server (port 3000, internal)
-- **nginx** — Reverse proxy with gzip, caching, and SSL (port 80/443)
+- **nginx** — reverse proxy with SSL termination (ports 80/443)
 
-The `ORIGIN` env var in `docker-compose.yml` must match the URL users access the app from (required for SvelteKit CSRF protection).
+The `ORIGIN` env var in `docker-compose.yml` must match the public URL (required for SvelteKit CSRF protection). For the production deployment:
 
-For production with Supabase:
-
-```bash
-docker compose build \
-  --build-arg PUBLIC_SUPABASE_URL=https://your-project.supabase.co \
-  --build-arg PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+```yaml
+environment:
+  - ORIGIN=https://statusreport.dynamo.works
+  - PROTOCOL_HEADER=X-Forwarded-Proto
+  - HOST_HEADER=X-Forwarded-Host
 ```
+
+### Production Architecture
+
+```
+Internet → Company Reverse Proxy (SSL) → EC2:443 (self-signed) → Nginx → App:3000
+```
+
+- SSL is terminated at the company reverse proxy (`aws-proxy.dynamo.works`)
+- EC2 uses a self-signed certificate (the proxy skips cert verification)
+- Nginx proxies to the SvelteKit Node server on port 3000
 
 ### Manual (EC2 + PM2)
 
