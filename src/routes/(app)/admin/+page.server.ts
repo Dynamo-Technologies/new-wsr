@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
   const [projectsResult, usersResult] = await Promise.all([
     supabase
       .from('projects')
-      .select('id, name, contract_number, start_date, end_date, program_manager_id, is_active, created_at, program_manager:profiles!program_manager_id(id, full_name)')
+      .select('id, name, contract_number, start_date, end_date, pm_name, pm_email, is_active, created_at')
       .order('name'),
     supabase
       .from('profiles')
@@ -42,11 +42,10 @@ export const actions: Actions = {
     if (!user) return fail(401, { error: 'Not authenticated' });
 
     const f = await request.formData();
-    const pmId = f.get('program_manager_id') as string;
     const { error } = await supabase.from('projects').insert({
       name: f.get('name') as string,
       contract_number: (f.get('contract_number') as string) || null,
-      program_manager_id: pmId || null,
+      pm_name: (f.get('pm_name') as string) || null,
       start_date: (f.get('start_date') as string) || null,
       end_date: (f.get('end_date') as string) || null,
       is_active: true
@@ -61,11 +60,10 @@ export const actions: Actions = {
 
     const f = await request.formData();
     const id = f.get('id') as string;
-    const pmId = f.get('program_manager_id') as string;
     const { error } = await supabase.from('projects').update({
       name: f.get('name') as string,
       contract_number: (f.get('contract_number') as string) || null,
-      program_manager_id: pmId || null,
+      pm_name: (f.get('pm_name') as string) || null,
       start_date: (f.get('start_date') as string) || null,
       end_date: (f.get('end_date') as string) || null,
       is_active: f.get('is_active') === 'true'

@@ -132,7 +132,7 @@
                     <div class="text-xs text-gray-400 dark:text-gray-500">#{project.contract_number}</div>
                   {/if}
                 </td>
-                <td class="table-cell">{project.program_manager?.full_name ?? '—'}</td>
+                <td class="table-cell">{project.pm_name ?? '—'}</td>
                 <td class="table-cell">
                   <span class="badge {project.is_active ? 'badge-green' : 'badge-gray'}">
                     {project.is_active ? 'Active' : 'Inactive'}
@@ -330,12 +330,7 @@
       </div>
       <div>
         <label class="label" for="p-pm">Program Manager</label>
-        <select name="program_manager_id" id="p-pm" class="select">
-          <option value="">Select PM...</option>
-          {#each managersForSelect as m}
-            <option value={m.id} selected={editingProject?.program_manager_id === m.id}>{m.full_name}</option>
-          {/each}
-        </select>
+        <input type="text" name="pm_name" id="p-pm" class="input" value={editingProject?.pm_name ?? ''} placeholder="e.g., John Smith" />
       </div>
       <div>
         <label class="label" for="p-start">Start Date</label>
