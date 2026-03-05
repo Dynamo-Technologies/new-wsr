@@ -76,8 +76,6 @@
     };
   }
 
-  const projectTypes = ['Prime', 'Subcontractor', 'Internal R&D', 'GWAC', 'IDIQ', 'Task Order'];
-  const agencies = ['DHS', 'DoD', 'FBI', 'DOS', 'HHS', 'VA', 'Treasury', 'DOJ', 'DOE', 'NASA', 'Internal'];
   const roles = ['employee', 'manager', 'director', 'vp', 'admin'];
 </script>
 
@@ -120,8 +118,6 @@
           <thead>
             <tr>
               <th class="table-header">Project</th>
-              <th class="table-header">Agency</th>
-              <th class="table-header">Type</th>
               <th class="table-header">PM</th>
               <th class="table-header">Status</th>
               <th class="table-header">Actions</th>
@@ -136,8 +132,6 @@
                     <div class="text-xs text-gray-400 dark:text-gray-500">#{project.contract_number}</div>
                   {/if}
                 </td>
-                <td class="table-cell">{project.client_agency ?? '—'}</td>
-                <td class="table-cell">{project.project_type ?? '—'}</td>
                 <td class="table-cell">{project.program_manager?.full_name ?? '—'}</td>
                 <td class="table-cell">
                   <span class="badge {project.is_active ? 'badge-green' : 'badge-gray'}">
@@ -335,29 +329,11 @@
         <input type="text" name="contract_number" id="p-contract" class="input" value={editingProject?.contract_number ?? ''} />
       </div>
       <div>
-        <label class="label" for="p-agency">Client Agency</label>
-        <select name="client_agency" id="p-agency" class="select">
-          <option value="">Select agency...</option>
-          {#each agencies as agency}
-            <option value={agency} selected={editingProject?.client_agency === agency}>{agency}</option>
-          {/each}
-        </select>
-      </div>
-      <div>
-        <label class="label" for="p-type">Project Type</label>
-        <select name="project_type" id="p-type" class="select">
-          <option value="">Select type...</option>
-          {#each projectTypes as pt}
-            <option value={pt} selected={editingProject?.project_type === pt}>{pt}</option>
-          {/each}
-        </select>
-      </div>
-      <div>
         <label class="label" for="p-pm">Program Manager</label>
         <select name="program_manager_id" id="p-pm" class="select">
           <option value="">Select PM...</option>
           {#each managersForSelect as m}
-            <option value={m.id} selected={editingProject?.program_manager?.id === m.id}>{m.full_name}</option>
+            <option value={m.id} selected={editingProject?.program_manager_id === m.id}>{m.full_name}</option>
           {/each}
         </select>
       </div>

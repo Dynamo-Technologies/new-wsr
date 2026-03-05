@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
   const [projectsResult, usersResult] = await Promise.all([
     supabase
       .from('projects')
-      .select('id, name, is_active, created_at')
+      .select('id, name, contract_number, start_date, end_date, program_manager_id, is_active, created_at, program_manager:profiles!program_manager_id(id, full_name)')
       .order('name'),
     supabase
       .from('profiles')
@@ -42,8 +42,13 @@ export const actions: Actions = {
     if (!user) return fail(401, { error: 'Not authenticated' });
 
     const f = await request.formData();
+    const pmId = f.get('program_manager_id') as string;
     const { error } = await supabase.from('projects').insert({
       name: f.get('name') as string,
+      contract_number: (f.get('contract_number') as string) || null,
+      program_manager_id: pmId || null,
+      start_date: (f.get('start_date') as string) || null,
+      end_date: (f.get('end_date') as string) || null,
       is_active: true
     });
     if (error) return fail(500, { error: error.message });
@@ -56,8 +61,13 @@ export const actions: Actions = {
 
     const f = await request.formData();
     const id = f.get('id') as string;
+    const pmId = f.get('program_manager_id') as string;
     const { error } = await supabase.from('projects').update({
       name: f.get('name') as string,
+      contract_number: (f.get('contract_number') as string) || null,
+      program_manager_id: pmId || null,
+      start_date: (f.get('start_date') as string) || null,
+      end_date: (f.get('end_date') as string) || null,
       is_active: f.get('is_active') === 'true'
     }).eq('id', id);
     if (error) return fail(500, { error: error.message });
