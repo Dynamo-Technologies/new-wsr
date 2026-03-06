@@ -1,7 +1,7 @@
 <script lang="ts">
   import { run } from 'svelte/legacy';
 
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { appUser } from '$lib/stores/auth';
   import Sidebar from '$lib/components/layout/Sidebar.svelte';
   import TopBar from '$lib/components/layout/TopBar.svelte';

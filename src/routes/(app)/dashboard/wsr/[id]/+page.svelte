@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { onMount } from 'svelte';
   import { toast } from '$lib/stores/toast';
   import { formatDate, getWeekLabel } from '$lib/utils/dates';
@@ -54,7 +54,7 @@
   };
 
   onMount(() => {
-    if ($page.url.searchParams.get('submitted') === 'true') {
+    if (page.url.searchParams.get('submitted') === 'true') {
       toast.success('WSR submitted successfully!');
     }
   });

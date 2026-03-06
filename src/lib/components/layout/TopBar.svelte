@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import type { User } from '$lib/types';
   import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
 
@@ -20,7 +20,7 @@
 
   let currentLabel = $derived(Object.entries(pageLabels)
     .sort(([a], [b]) => b.length - a.length)
-    .find(([path]) => $page.url.pathname.startsWith(path))?.[1] ?? 'Dashboard');
+    .find(([path]) => page.url.pathname.startsWith(path))?.[1] ?? 'Dashboard');
 
   let initials = $derived(user?.full_name
     ? user.full_name

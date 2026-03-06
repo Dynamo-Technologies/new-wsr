@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import type { User } from '$lib/types';
 
@@ -46,7 +46,7 @@
         ? pmNav
         : employeeNav);
 
-  let currentPath = $derived($page.url.pathname);
+  let currentPath = $derived(page.url.pathname);
 
   function isActive(href: string, path: string): boolean {
     if (href === '/dashboard') return path === '/dashboard';
