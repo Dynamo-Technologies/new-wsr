@@ -35,7 +35,7 @@
       </span>
       <span class="text-sm font-medium flex-1">{t.message}</span>
       <button
-        on:click={() => toast.remove(t.id)}
+        onclick={() => toast.remove(t.id)}
         class="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
         aria-label="Dismiss"
       >

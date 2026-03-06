@@ -1,6 +1,10 @@
 <script lang="ts">
-  export let message = 'Loading...';
-  export let subMessage = '';
+  interface Props {
+    message?: string;
+    subMessage?: string;
+  }
+
+  let { message = 'Loading...', subMessage = '' }: Props = $props();
 </script>
 
 <div class="card p-8 flex flex-col items-center justify-center text-center">

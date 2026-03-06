@@ -5,7 +5,7 @@
   import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
 
   const supabase = createSupabaseBrowserClient();
-  let msLoading = false;
+  let msLoading = $state(false);
 
   async function signInWithMicrosoft() {
     msLoading = true;
@@ -49,7 +49,7 @@
 
           <!-- Microsoft SSO -->
           <button
-            on:click={signInWithMicrosoft}
+            onclick={signInWithMicrosoft}
             disabled={msLoading}
             class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300
                    rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-150

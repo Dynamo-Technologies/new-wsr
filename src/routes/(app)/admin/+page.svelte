@@ -7,41 +7,40 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import StatCard from '$lib/components/ui/StatCard.svelte';
 
-  export let data;
-  export let form;
+  let { data, form } = $props();
 
-  let activeTab: 'projects' | 'users' | 'tags' | 'overrides' = 'projects';
+  let activeTab: 'projects' | 'users' | 'tags' | 'overrides' = $state('projects');
   function setTab(id: string) { activeTab = id as typeof activeTab; }
 
   // Projects state
-  let showProjectModal = false;
-  let editingProject: (typeof data.projects)[0] | null = null;
-  let savingProject = false;
+  let showProjectModal = $state(false);
+  let editingProject: (typeof data.projects)[0] | null = $state(null);
+  let savingProject = $state(false);
 
   // Users state
-  let editingUser: (typeof data.users)[0] | null = null;
-  let showUserModal = false;
-  let savingUser = false;
-  let userSearch = '';
+  let editingUser: (typeof data.users)[0] | null = $state(null);
+  let showUserModal = $state(false);
+  let savingUser = $state(false);
+  let userSearch = $state('');
 
   // Tags state
-  let showTagModal = false;
+  let showTagModal = $state(false);
   let deletingTagId = '';
-  let savingTag = false;
+  let savingTag = $state(false);
 
   // Overrides state
-  let showOverrideModal = false;
-  let savingOverride = false;
+  let showOverrideModal = $state(false);
+  let savingOverride = $state(false);
 
 
-  $: filteredUsers = data.users.filter((u) =>
+  let filteredUsers = $derived(data.users.filter((u) =>
     u.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
     u.email.toLowerCase().includes(userSearch.toLowerCase())
-  );
+  ));
 
-  $: managersForSelect = data.users.filter((u) =>
+  let managersForSelect = $derived(data.users.filter((u) =>
     ['manager', 'director', 'vp', 'admin'].includes(u.role)
-  );
+  ));
 
   function openEditProject(p: typeof editingProject) {
     editingProject = p;
@@ -88,7 +87,7 @@
     { id: 'overrides', label: 'Manager Overrides', count: data.overrides.length }
   ] as tab}
     <button
-      on:click={() => setTab(tab.id)}
+      onclick={() => setTab(tab.id)}
       class="px-4 py-3 text-sm font-medium transition-colors duration-150 border-b-2 -mb-px whitespace-nowrap {activeTab === tab.id
         ? 'border-primary text-primary'
         : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}"
@@ -106,7 +105,7 @@
   <div>
     <div class="flex justify-between items-center mb-4">
       <h2>Projects</h2>
-      <button class="btn-primary" on:click={() => { editingProject = null; showProjectModal = true; }}>
+      <button class="btn-primary" onclick={() => { editingProject = null; showProjectModal = true; }}>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Project
       </button>
@@ -136,7 +135,7 @@
                   </span>
                 </td>
                 <td class="table-cell">
-                  <button class="text-xs text-primary hover:underline" on:click={() => openEditProject(project)}>
+                  <button class="text-xs text-primary hover:underline" onclick={() => openEditProject(project)}>
                     Edit
                   </button>
                 </td>
@@ -195,7 +194,7 @@
                   </span>
                 </td>
                 <td class="table-cell">
-                  <button class="text-xs text-primary hover:underline" on:click={() => openEditUser(u)}>
+                  <button class="text-xs text-primary hover:underline" onclick={() => openEditUser(u)}>
                     Edit
                   </button>
                 </td>
@@ -212,7 +211,7 @@
   <div>
     <div class="flex justify-between items-center mb-4">
       <h2>Work Type Tags</h2>
-      <button class="btn-primary" on:click={() => (showTagModal = true)}>
+      <button class="btn-primary" onclick={() => (showTagModal = true)}>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Tag
       </button>
@@ -234,7 +233,7 @@
                     return async ({ result, update }) => { await update(); };
                   }}>
                     <input type="hidden" name="id" value={tag.id} />
-                    <button type="submit" class="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                    <button type="submit" aria-label="Delete tag" class="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </form>
@@ -252,7 +251,7 @@
   <div>
     <div class="flex justify-between items-center mb-4">
       <h2>Manager Overrides</h2>
-      <button class="btn-primary" on:click={() => (showOverrideModal = true)}>
+      <button class="btn-primary" onclick={() => (showOverrideModal = true)}>
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Add Override
       </button>
@@ -336,13 +335,15 @@
       {/if}
     </div>
   </form>
-  <svelte:fragment slot="footer">
-    <button type="button" class="btn-secondary" on:click={() => (showProjectModal = false)}>Cancel</button>
-    <button type="submit" form="project-form" class="btn-primary" disabled={savingProject}>
-      {#if savingProject}<Spinner size="sm" color="text-white" />{/if}
-      {editingProject ? 'Save Changes' : 'Create Project'}
-    </button>
-  </svelte:fragment>
+  {#snippet footer()}
+  
+      <button type="button" class="btn-secondary" onclick={() => (showProjectModal = false)}>Cancel</button>
+      <button type="submit" form="project-form" class="btn-primary" disabled={savingProject}>
+        {#if savingProject}<Spinner size="sm" color="text-white" />{/if}
+        {editingProject ? 'Save Changes' : 'Create Project'}
+      </button>
+    
+  {/snippet}
 </Modal>
 
 <!-- User Edit Modal -->
@@ -393,13 +394,15 @@
       </div>
     </form>
   {/if}
-  <svelte:fragment slot="footer">
-    <button type="button" class="btn-secondary" on:click={() => (showUserModal = false)}>Cancel</button>
-    <button type="submit" form="user-edit-form" class="btn-primary" disabled={savingUser}>
-      {#if savingUser}<Spinner size="sm" color="text-white" />{/if}
-      Save Changes
-    </button>
-  </svelte:fragment>
+  {#snippet footer()}
+  
+      <button type="button" class="btn-secondary" onclick={() => (showUserModal = false)}>Cancel</button>
+      <button type="submit" form="user-edit-form" class="btn-primary" disabled={savingUser}>
+        {#if savingUser}<Spinner size="sm" color="text-white" />{/if}
+        Save Changes
+      </button>
+    
+  {/snippet}
 </Modal>
 
 <!-- Add Tag Modal -->
@@ -435,13 +438,15 @@
       </div>
     </div>
   </form>
-  <svelte:fragment slot="footer">
-    <button type="button" class="btn-secondary" on:click={() => (showTagModal = false)}>Cancel</button>
-    <button type="submit" form="tag-form" class="btn-primary" disabled={savingTag}>
-      {#if savingTag}<Spinner size="sm" color="text-white" />{/if}
-      Add Tag
-    </button>
-  </svelte:fragment>
+  {#snippet footer()}
+  
+      <button type="button" class="btn-secondary" onclick={() => (showTagModal = false)}>Cancel</button>
+      <button type="submit" form="tag-form" class="btn-primary" disabled={savingTag}>
+        {#if savingTag}<Spinner size="sm" color="text-white" />{/if}
+        Add Tag
+      </button>
+    
+  {/snippet}
 </Modal>
 
 <!-- Override Modal -->
@@ -496,11 +501,13 @@
       </div>
     </div>
   </form>
-  <svelte:fragment slot="footer">
-    <button type="button" class="btn-secondary" on:click={() => (showOverrideModal = false)}>Cancel</button>
-    <button type="submit" form="override-form" class="btn-primary" disabled={savingOverride}>
-      {#if savingOverride}<Spinner size="sm" color="text-white" />{/if}
-      Create Override
-    </button>
-  </svelte:fragment>
+  {#snippet footer()}
+  
+      <button type="button" class="btn-secondary" onclick={() => (showOverrideModal = false)}>Cancel</button>
+      <button type="submit" form="override-form" class="btn-primary" disabled={savingOverride}>
+        {#if savingOverride}<Spinner size="sm" color="text-white" />{/if}
+        Create Override
+      </button>
+    
+  {/snippet}
 </Modal>

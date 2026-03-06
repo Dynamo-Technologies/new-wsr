@@ -1,10 +1,14 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import type { User } from '$lib/types';
   import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
 
-  export let user: User;
-  export let onMenuClick: () => void;
+  interface Props {
+    user: User;
+    onMenuClick: () => void;
+  }
+
+  let { user, onMenuClick }: Props = $props();
 
   const pageLabels: Record<string, string> = {
     '/dashboard': 'Dashboard',
@@ -14,24 +18,24 @@
     '/admin': 'Admin Panel'
   };
 
-  $: currentLabel = Object.entries(pageLabels)
+  let currentLabel = $derived(Object.entries(pageLabels)
     .sort(([a], [b]) => b.length - a.length)
-    .find(([path]) => $page.url.pathname.startsWith(path))?.[1] ?? 'Dashboard';
+    .find(([path]) => page.url.pathname.startsWith(path))?.[1] ?? 'Dashboard');
 
-  $: initials = user?.full_name
+  let initials = $derived(user?.full_name
     ? user.full_name
         .split(' ')
         .slice(0, 2)
         .map((n) => n[0])
         .join('')
         .toUpperCase()
-    : '?';
+    : '?');
 </script>
 
 <header class="bg-white dark:bg-dark border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-[17px] flex items-center gap-4 shrink-0">
   <!-- Mobile menu toggle -->
   <button
-    on:click={onMenuClick}
+    onclick={onMenuClick}
     class="lg:hidden p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100
            dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-dark-50 transition-colors"
     aria-label="Toggle menu"

@@ -1,11 +1,11 @@
 <script lang="ts">
   import { theme } from '$lib/stores/theme';
 
-  $: isDark = $theme === 'dark';
+  let isDark = $derived($theme === 'dark');
 </script>
 
 <button
-  on:click={() => theme.toggle()}
+  onclick={() => theme.toggle()}
   class="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100
          dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-dark-50
          transition-colors"

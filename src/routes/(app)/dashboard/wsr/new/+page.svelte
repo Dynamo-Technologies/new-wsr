@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { enhance } from '$app/forms';
   import { goto } from '$app/navigation';
   import { toast } from '$lib/stores/toast';
@@ -7,13 +9,17 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import type { ActionData } from './$types';
 
-  export let data;
-  export let form: ActionData;
+  interface Props {
+    data: any;
+    form: ActionData;
+  }
 
-  let loading = false;
-  let reportType: 'technical' | 'pm' | 'admin' = 'technical';
-  let selectedTags: string[] = [];
-  let multiProject = false;
+  let { data, form }: Props = $props();
+
+  let loading = $state(false);
+  let reportType: 'technical' | 'pm' | 'admin' = $state('technical');
+  let selectedTags: string[] = $state([]);
+  let multiProject = $state(false);
 
   // Default week ending to upcoming Friday
   const defaultWeekEnding = toInputDate(getUpcomingFriday());
@@ -25,7 +31,7 @@
     description: string;
   }
 
-  let entries: ProjectEntry[] = [{ project_id: '', hours: '', description: '' }];
+  let entries: ProjectEntry[] = $state([{ project_id: '', hours: '', description: '' }]);
 
   function addEntry() {
     entries = [...entries, { project_id: '', hours: '', description: '' }];
@@ -61,15 +67,17 @@
     ]
   };
 
-  $: currentTags = tagsByType[reportType] ?? [];
-  $: {
+  let currentTags = $derived(tagsByType[reportType] ?? []);
+  run(() => {
     selectedTags = selectedTags.filter((t) => currentTags.includes(t));
-  }
+  });
 
   // When multiProject is unchecked, trim to first entry only
-  $: if (!multiProject && entries.length > 1) {
-    entries = [entries[0]];
-  }
+  run(() => {
+    if (!multiProject && entries.length > 1) {
+      entries = [entries[0]];
+    }
+  });
 
   const reportTypeOptions = [
     {
@@ -225,7 +233,7 @@
           {#if multiProject && entries.length > 1 && i > 0}
             <button
               type="button"
-              on:click={() => removeEntry(i)}
+              onclick={() => removeEntry(i)}
               class="text-sm text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
             >
               Remove
@@ -304,7 +312,7 @@
       {#if multiProject}
         <button
           type="button"
-          on:click={addEntry}
+          onclick={addEntry}
           class="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary-600 font-medium transition-colors"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

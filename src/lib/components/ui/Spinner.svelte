@@ -1,6 +1,10 @@
 <script lang="ts">
-  export let size: 'xs' | 'sm' | 'md' | 'lg' = 'md';
-  export let color: string = 'text-primary';
+  interface Props {
+    size?: 'xs' | 'sm' | 'md' | 'lg';
+    color?: string;
+  }
+
+  let { size = 'md', color = 'text-primary' }: Props = $props();
 
   const sizes = {
     xs: 'w-3 h-3',

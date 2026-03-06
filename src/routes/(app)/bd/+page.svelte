@@ -8,17 +8,16 @@
   import TagInput from '$lib/components/ui/TagInput.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
 
-  export let data;
-  export let form;
+  let { data, form } = $props();
 
-  let searching = false;
-  let generating = false;
-  let selectedTags: string[] = [];
-  let selectedWSRIds: Set<string> = new Set();
-  let narrativeModalOpen = false;
-  let narrative = '';
+  let searching = $state(false);
+  let generating = $state(false);
+  let selectedTags: string[] = $state([]);
+  let selectedWSRIds: Set<string> = $state(new Set());
+  let narrativeModalOpen = $state(false);
+  let narrative = $state('');
 
-  const tagNames = data.tags.map((t) => t.name);
+  const tagNames = $derived(data.tags.map((t: any) => t.name));
 
   function toggleWSR(id: string) {
     const next = new Set(selectedWSRIds);
@@ -35,8 +34,6 @@
     selectedWSRIds = new Set();
   }
 
-  // Group results by project
-  $: resultsByProject = groupByProject(form?.results ?? []);
 
   function groupByProject(wsrs: any[]) {
     const groups = new Map<string, { project: any; wsrs: any[] }>();
@@ -77,6 +74,8 @@
   function exportPDF() {
     printAsPDF('Past Performance Narrative', narrative);
   }
+  // Group results by project
+  let resultsByProject = $derived(groupByProject(form?.results ?? []));
 </script>
 
 <div>
@@ -216,9 +215,9 @@
             {/if}
           </div>
           <div class="flex items-center gap-2">
-            <button class="btn-ghost text-sm" on:click={selectAll}>Select All</button>
+            <button class="btn-ghost text-sm" onclick={selectAll}>Select All</button>
             {#if selectedWSRIds.size > 0}
-              <button class="btn-ghost text-sm" on:click={clearSelection}>Clear</button>
+              <button class="btn-ghost text-sm" onclick={clearSelection}>Clear</button>
               <form
                 method="POST"
                 action="?/generatePastPerf"
@@ -277,7 +276,7 @@
                       type="checkbox"
                       class="mt-0.5 rounded border-gray-300 dark:border-gray-600 text-primary focus:ring-primary"
                       checked={selectedWSRIds.has(wsr.id)}
-                      on:change={() => toggleWSR(wsr.id)}
+                      onchange={() => toggleWSR(wsr.id)}
                     />
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 mb-1">
@@ -313,19 +312,21 @@
     <pre class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-sans">{narrative}</pre>
   </div>
 
-  <svelte:fragment slot="footer">
-    <button class="btn-secondary" on:click={exportNarrative}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-      </svg>
-      Export Markdown
-    </button>
-    <button class="btn-secondary" on:click={exportPDF}>
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
-      </svg>
-      Export PDF
-    </button>
-    <button class="btn-primary" on:click={() => (narrativeModalOpen = false)}>Close</button>
-  </svelte:fragment>
+  {#snippet footer()}
+  
+      <button class="btn-secondary" onclick={exportNarrative}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Export Markdown
+      </button>
+      <button class="btn-secondary" onclick={exportPDF}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Export PDF
+      </button>
+      <button class="btn-primary" onclick={() => (narrativeModalOpen = false)}>Close</button>
+    
+  {/snippet}
 </Modal>
