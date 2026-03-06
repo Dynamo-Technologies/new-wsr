@@ -1,11 +1,20 @@
 <script lang="ts">
-  export let options: string[] = [];
-  export let selected: string[] = [];
-  export let label = '';
-  export let placeholder = 'Select tags...';
+  interface Props {
+    options?: string[];
+    selected?: string[];
+    label?: string;
+    placeholder?: string;
+  }
 
-  let customTagInput = '';
-  let showAddInput = false;
+  let {
+    options = $bindable([]),
+    selected = $bindable([]),
+    label = '',
+    placeholder = 'Select tags...'
+  }: Props = $props();
+
+  let customTagInput = $state('');
+  let showAddInput = $state(false);
 
   function toggle(tag: string) {
     if (selected.includes(tag)) {
@@ -40,13 +49,13 @@
 
 <div>
   {#if label}
-    <label class="label">{label}</label>
+    <label class="label" for="tag-input-custom">{label}</label>
   {/if}
   <div class="flex flex-wrap gap-2 p-2 border border-gray-300 dark:border-gray-600 rounded-lg min-h-[44px] bg-white dark:bg-dark-50 focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent">
     {#each options as tag}
       <button
         type="button"
-        on:click={() => toggle(tag)}
+        onclick={() => toggle(tag)}
         class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors duration-100 {selected.includes(tag)
           ? 'bg-primary text-white'
           : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-100 dark:text-gray-300 dark:hover:bg-dark-200'}"
@@ -59,17 +68,17 @@
       <input
         type="text"
         bind:value={customTagInput}
-        on:keydown={handleKeydown}
-        on:blur={addCustomTag}
+        onkeydown={handleKeydown}
+        onblur={addCustomTag}
         class="px-2 py-0.5 text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded-full outline-none
                text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 w-36"
+        id="tag-input-custom"
         placeholder="Type tag name..."
-        autofocus
       />
     {:else}
       <button
         type="button"
-        on:click={() => (showAddInput = true)}
+        onclick={() => (showAddInput = true)}
         class="px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-gray-300 dark:border-gray-600
                text-gray-500 dark:text-gray-400 hover:border-primary hover:text-primary transition-colors duration-100"
       >

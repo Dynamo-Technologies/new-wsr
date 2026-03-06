@@ -1,7 +1,9 @@
 <script lang="ts">
   import { formatDate } from '$lib/utils/dates';
 
-  export let wsr: {
+
+  interface Props {
+    wsr: {
     id: string;
     week_ending: string;
     report_type: string;
@@ -12,9 +14,11 @@
     project?: { id: string; name: string; client_agency?: string | null } | null;
     user?: { full_name?: string } | null;
   };
+    showUser?: boolean;
+    compact?: boolean;
+  }
 
-  export let showUser = false;
-  export let compact = false;
+  let { wsr, showUser = false, compact = false }: Props = $props();
 
   const typeColors: Record<string, string> = {
     technical: 'badge-blue',

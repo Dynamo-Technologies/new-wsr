@@ -9,14 +9,18 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import type { ActionData } from './$types';
 
-  export let data;
-  export let form: ActionData;
+  interface Props {
+    data: any;
+    form: ActionData;
+  }
 
-  let editing = false;
-  let saving = false;
-  let deleting = false;
-  let showDeleteConfirm = false;
-  let selectedTags: string[] = data.wsr.work_type_tags ?? [];
+  let { data, form }: Props = $props();
+
+  let editing = $state(false);
+  let saving = $state(false);
+  let deleting = $state(false);
+  let showDeleteConfirm = $state(false);
+  let selectedTags: string[] = $state(data.wsr.work_type_tags ?? []);
 
   const tagsByType: Record<string, string[]> = {
     technical: [
@@ -35,7 +39,7 @@
     ]
   };
 
-  $: currentTags = tagsByType[data.wsr.report_type] ?? [];
+  let currentTags = $derived(tagsByType[data.wsr.report_type] ?? []);
 
   const typeLabels: Record<string, string> = {
     technical: 'Technical',
@@ -84,20 +88,20 @@
     {#if data.canEdit}
       <div class="flex items-center gap-2">
         {#if !editing}
-          <button class="btn-secondary" on:click={() => (editing = true)}>
+          <button class="btn-secondary" onclick={() => (editing = true)}>
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
             Edit
           </button>
-          <button class="btn-ghost text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30" on:click={() => (showDeleteConfirm = true)}>
+          <button class="btn-ghost text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30" onclick={() => (showDeleteConfirm = true)}>
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
             </svg>
             Delete
           </button>
         {:else}
-          <button class="btn-ghost" on:click={() => { editing = false; selectedTags = data.wsr.work_type_tags ?? []; }}>
+          <button class="btn-ghost" onclick={() => { editing = false; selectedTags = data.wsr.work_type_tags ?? []; }}>
             Cancel
           </button>
         {/if}
@@ -183,7 +187,7 @@
       </div>
 
       <div class="flex justify-end gap-3">
-        <button type="button" class="btn-secondary" on:click={() => (editing = false)}>Cancel</button>
+        <button type="button" class="btn-secondary" onclick={() => (editing = false)}>Cancel</button>
         <button type="submit" class="btn-primary" disabled={saving}>
           {#if saving}<Spinner size="sm" color="text-white" />{/if}
           Save Changes

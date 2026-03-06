@@ -1,8 +1,19 @@
 <script lang="ts">
-  export let label = '';
-  export let value: string | number = '';
-  export let subtext = '';
-  export let color: 'primary' | 'green' | 'blue' | 'yellow' | 'gray' = 'primary';
+  interface Props {
+    label?: string;
+    value?: string | number;
+    subtext?: string;
+    color?: 'primary' | 'green' | 'blue' | 'yellow' | 'gray';
+    icon?: import('svelte').Snippet;
+  }
+
+  let {
+    label = '',
+    value = '',
+    subtext = '',
+    color = 'primary',
+    icon
+  }: Props = $props();
 
   const colors = {
     primary: 'bg-primary-50 text-primary dark:bg-primary-950 dark:text-primary-400',
@@ -22,9 +33,9 @@
         <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtext}</p>
       {/if}
     </div>
-    {#if $$slots.icon}
+    {#if icon}
       <div class="w-10 h-10 rounded-xl flex items-center justify-center {colors[color]}">
-        <slot name="icon" />
+        {@render icon?.()}
       </div>
     {/if}
   </div>

@@ -7,7 +7,7 @@
   import { theme } from '$lib/stores/theme';
   import Toast from '$lib/components/ui/Toast.svelte';
 
-  export let data;
+  let { data, children } = $props();
 
   const supabase = createSupabaseBrowserClient();
 
@@ -31,5 +31,5 @@
   });
 </script>
 
-<slot />
+{@render children?.()}
 <Toast />

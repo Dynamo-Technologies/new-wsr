@@ -9,33 +9,27 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
 
-  export let data;
+  let { data } = $props();
 
-  let activeTab: 'team' | 'msr' = 'team';
+  let activeTab: 'team' | 'msr' = $state('team');
   function setTab(id: string) { activeTab = id as typeof activeTab; }
 
   // Team WSR filters
-  let filterUser = '';
-  let filterWeek = '';
+  let filterUser = $state('');
+  let filterWeek = $state('');
 
   // MSR generation
-  let selectedProject = '';
-  let selectedMonth = '';
-  let generatingMSR = false;
-  let msrModalOpen = false;
-  let selectedMSR: (typeof data.msrs)[0] | null = null;
-  let editedMSRSummary = '';
-  let savingMSR = false;
+  let selectedProject = $state('');
+  let selectedMonth = $state('');
+  let generatingMSR = $state(false);
+  let msrModalOpen = $state(false);
+  let selectedMSR: (typeof data.msrs)[0] | null = $state(null);
+  let editedMSRSummary = $state('');
+  let savingMSR = $state(false);
 
   const recentMonths = getRecentMonths(12);
 
-  $: filteredWSRs = data.teamWSRs.filter((w: any) => {
-    if (filterUser && w.user?.id !== filterUser) return false;
-    if (filterWeek && w.week_ending !== filterWeek) return false;
-    return true;
-  });
 
-  $: wsrsByWeek = groupByWeek(filteredWSRs);
 
   function groupByWeek(wsrs: any[]) {
     const groups = new Map<string, any[]>();
@@ -87,7 +81,7 @@
     }
   }
 
-  let deletingMSRId: string | null = null;
+  let deletingMSRId: string | null = $state(null);
 
   function handleDeleteMSRResult({ result }: { result: { type: string } }) {
     deletingMSRId = null;
@@ -97,6 +91,12 @@
       toast.error('Failed to delete MSR');
     }
   }
+  let filteredWSRs = $derived(data.teamWSRs.filter((w: any) => {
+    if (filterUser && w.user?.id !== filterUser) return false;
+    if (filterWeek && w.week_ending !== filterWeek) return false;
+    return true;
+  }));
+  let wsrsByWeek = $derived(groupByWeek(filteredWSRs));
 </script>
 
 <!-- Tabs -->
@@ -106,7 +106,7 @@
     { id: 'msr', label: 'Monthly Reports', count: data.msrs.length }
   ] as tab}
     <button
-      on:click={() => setTab(tab.id)}
+      onclick={() => setTab(tab.id)}
       class="px-4 py-3 text-sm font-medium transition-colors duration-150 border-b-2 -mb-px {activeTab === tab.id
         ? 'border-primary text-primary'
         : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'}"
@@ -139,7 +139,7 @@
           <input type="date" bind:value={filterWeek} id="filter-week" class="input" />
         </div>
         <div class="flex items-end">
-          <button class="btn-ghost text-sm" on:click={() => { filterUser = ''; filterWeek = ''; }}>
+          <button class="btn-ghost text-sm" onclick={() => { filterUser = ''; filterWeek = ''; }}>
             Clear Filters
           </button>
         </div>
@@ -159,7 +159,7 @@
         message="No WSRs match the current filters."
         icon="inbox"
       >
-        <button class="btn-secondary text-sm" on:click={() => { filterUser = ''; filterWeek = ''; }}>
+        <button class="btn-secondary text-sm" onclick={() => { filterUser = ''; filterWeek = ''; }}>
           Clear Filters
         </button>
       </EmptyState>
@@ -290,7 +290,7 @@
                     <td class="table-cell text-gray-400 dark:text-gray-500 text-xs">{formatDate(msr.created_at)}</td>
                     <td class="table-cell">
                       <div class="flex items-center gap-2">
-                        <button class="text-xs text-primary hover:underline" on:click={() => openMSR(msr)}>
+                        <button class="text-xs text-primary hover:underline" onclick={() => openMSR(msr)}>
                           View/Edit
                         </button>
                         <form
@@ -375,19 +375,21 @@
     </form>
   {/if}
 
-  <svelte:fragment slot="footer">
-    {#if selectedMSR}
-      <button type="button" class="btn-ghost" on:click={() => exportMSR(selectedMSR)}>
-        Export Markdown
+  {#snippet footer()}
+  
+      {#if selectedMSR}
+        <button type="button" class="btn-ghost" onclick={() => exportMSR(selectedMSR)}>
+          Export Markdown
+        </button>
+        <button type="button" class="btn-ghost" onclick={() => exportMSRPDF(selectedMSR)}>
+          Export PDF
+        </button>
+      {/if}
+      <button type="button" class="btn-secondary" onclick={() => (msrModalOpen = false)}>Close</button>
+      <button type="submit" form="msr-save-form" class="btn-primary" disabled={savingMSR}>
+        {#if savingMSR}<Spinner size="sm" color="text-white" />{/if}
+        Save
       </button>
-      <button type="button" class="btn-ghost" on:click={() => exportMSRPDF(selectedMSR)}>
-        Export PDF
-      </button>
-    {/if}
-    <button type="button" class="btn-secondary" on:click={() => (msrModalOpen = false)}>Close</button>
-    <button type="submit" form="msr-save-form" class="btn-primary" disabled={savingMSR}>
-      {#if savingMSR}<Spinner size="sm" color="text-white" />{/if}
-      Save
-    </button>
-  </svelte:fragment>
+    
+  {/snippet}
 </Modal>

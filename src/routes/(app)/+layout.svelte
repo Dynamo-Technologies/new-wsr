@@ -1,15 +1,19 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { page } from '$app/stores';
   import { appUser } from '$lib/stores/auth';
   import Sidebar from '$lib/components/layout/Sidebar.svelte';
   import TopBar from '$lib/components/layout/TopBar.svelte';
 
-  export let data;
+  let { data, children } = $props();
 
   // Hydrate the appUser store from server data
-  $: appUser.set(data.appUser);
+  run(() => {
+    appUser.set(data.appUser);
+  });
 
-  let sidebarOpen = false;
+  let sidebarOpen = $state(false);
 </script>
 
 <div class="flex h-screen bg-gray-50 dark:bg-dark-700 overflow-hidden">
@@ -20,8 +24,8 @@
   {#if sidebarOpen}
     <div
       class="fixed inset-0 z-20 bg-black/40 dark:bg-black/60 lg:hidden"
-      on:click={() => (sidebarOpen = false)}
-      on:keydown={(e) => e.key === 'Escape' && (sidebarOpen = false)}
+      onclick={() => (sidebarOpen = false)}
+      onkeydown={(e) => e.key === 'Escape' && (sidebarOpen = false)}
       role="button"
       tabindex="0"
     ></div>
@@ -34,7 +38,7 @@
     <!-- Page content -->
     <main class="flex-1 overflow-y-auto">
       <div class="px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
-        <slot />
+        {@render children?.()}
       </div>
     </main>
   </div>

@@ -1,10 +1,24 @@
 <script lang="ts">
+  import { self } from 'svelte/legacy';
+
   import { fade, scale } from 'svelte/transition';
   import { createEventDispatcher } from 'svelte';
 
-  export let open = false;
-  export let title = '';
-  export let size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
+  interface Props {
+    open?: boolean;
+    title?: string;
+    size?: 'sm' | 'md' | 'lg' | 'xl';
+    children?: import('svelte').Snippet;
+    footer?: import('svelte').Snippet;
+  }
+
+  let {
+    open = $bindable(false),
+    title = '',
+    size = 'md',
+    children,
+    footer
+  }: Props = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -25,15 +39,17 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if open}
   <!-- Backdrop -->
   <div
     transition:fade={{ duration: 150 }}
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-    on:click|self={close}
+    onclick={self(close)}
+    onkeydown={(e) => e.key === 'Enter' && close()}
     role="dialog"
+    tabindex="-1"
     aria-modal="true"
     aria-label={title}
   >
@@ -46,7 +62,7 @@
         <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
           <button
-            on:click={close}
+            onclick={close}
             class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-dark-50 transition-colors"
             aria-label="Close"
           >
@@ -56,12 +72,12 @@
       {/if}
 
       <div class="px-6 py-4">
-        <slot />
+        {@render children?.()}
       </div>
 
-      {#if $$slots.footer}
+      {#if footer}
         <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-          <slot name="footer" />
+          {@render footer?.()}
         </div>
       {/if}
     </div>

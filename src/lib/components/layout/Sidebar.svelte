@@ -3,10 +3,19 @@
   import { goto } from '$app/navigation';
   import type { User } from '$lib/types';
 
-  export let open = false;
-  export let user: User;
-  export let managedProjects: { id: string; name: string }[] = [];
-  export let isAdmin = false;
+  interface Props {
+    open?: boolean;
+    user: User;
+    managedProjects?: { id: string; name: string }[];
+    isAdmin?: boolean;
+  }
+
+  let {
+    open = $bindable(false),
+    user,
+    managedProjects = [],
+    isAdmin = false
+  }: Props = $props();
 
   // Role-based navigation
   const employeeNav = [
@@ -29,15 +38,15 @@
     { href: '/dashboard/wsr/new', label: 'Submit WSR', icon: 'plus-circle' }
   ];
 
-  $: isPM = managedProjects.length > 0;
-  $: navItems =
-    isAdmin
+  let isPM = $derived(managedProjects.length > 0);
+  let navItems =
+    $derived(isAdmin
       ? adminNav
       : isPM
         ? pmNav
-        : employeeNav;
+        : employeeNav);
 
-  $: currentPath = $page.url.pathname;
+  let currentPath = $derived($page.url.pathname);
 
   function isActive(href: string, path: string): boolean {
     if (href === '/dashboard') return path === '/dashboard';
@@ -64,14 +73,14 @@
   }
 
   // User initials for avatar
-  $: initials = user?.full_name
+  let initials = $derived(user?.full_name
     ? user.full_name
         .split(' ')
         .slice(0, 2)
         .map((n) => n[0])
         .join('')
         .toUpperCase()
-    : '??';
+    : '??');
 </script>
 
 <!-- Sidebar wrapper -->
@@ -94,7 +103,7 @@
       <a
         href={item.href}
         class={isActive(item.href, currentPath) ? 'nav-item-active' : 'nav-item'}
-        on:click={() => (open = false)}
+        onclick={() => (open = false)}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -130,7 +139,7 @@
     </div>
 
     <button
-      on:click={signOut}
+      onclick={signOut}
       class="nav-item w-full mt-1 text-gray-500 hover:text-red-600 hover:bg-red-50
              dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/20"
     >

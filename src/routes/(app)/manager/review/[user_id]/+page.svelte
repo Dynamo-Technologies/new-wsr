@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { run } from 'svelte/legacy';
+
   import { enhance } from '$app/forms';
   import { toast } from '$lib/stores/toast';
   import { formatDate, getRecentQuarters, parseQuarterDates, toInputDate } from '$lib/utils/dates';
@@ -6,25 +8,25 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
 
-  export let data;
+  let { data } = $props();
 
-  let generating = false;
-  let saving = false;
-  let selectedQuarter = getRecentQuarters()[1]; // Last quarter
-  let selectedReviewId = '';
-  let managerNotes = '';
-  let editedStatus = 'draft';
+  let generating = $state(false);
+  let saving = $state(false);
+  let selectedQuarter = $state(getRecentQuarters()[1]); // Last quarter
+  let selectedReviewId = $state('');
+  let managerNotes = $state('');
+  let editedStatus = $state('draft');
 
   const recentQuarters = getRecentQuarters(8);
 
-  $: quarterDates = parseQuarterDates(selectedQuarter);
-  $: selectedReview = data.reviews.find((r) => r.id === selectedReviewId) ?? null;
-  $: {
+  let quarterDates = $derived(parseQuarterDates(selectedQuarter));
+  let selectedReview = $derived(data.reviews.find((r) => r.id === selectedReviewId) ?? null);
+  run(() => {
     if (selectedReview) {
       managerNotes = selectedReview.manager_notes ?? '';
       editedStatus = selectedReview.status;
     }
-  }
+  });
 
   function handleGenerateResult({ result }: { result: { type: string; data?: { reviewId?: string } } }) {
     generating = false;
@@ -159,11 +161,11 @@
               <div class="flex items-center gap-2">
                 <button
                   class="text-xs text-primary hover:underline"
-                  on:click={() => (selectedReviewId = selectedReviewId === review.id ? '' : review.id)}
+                  onclick={() => (selectedReviewId = selectedReviewId === review.id ? '' : review.id)}
                 >
                   {selectedReviewId === review.id ? 'Collapse' : 'View/Edit'}
                 </button>
-                <button class="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" on:click={exportReview}>
+                <button class="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300" onclick={exportReview}>
                   Export
                 </button>
               </div>
