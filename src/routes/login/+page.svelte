@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { createSupabaseBrowserClient } from '$lib/supabase';
   import { toast } from '$lib/stores/toast';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import ThemeToggle from '$lib/components/ui/ThemeToggle.svelte';
 
-  const supabase = createSupabaseBrowserClient();
+  let { data } = $props();
+  let { supabase } = $derived(data);
   let msLoading = $state(false);
 
   async function signInWithMicrosoft() {

@@ -2,14 +2,12 @@
   import '../app.css';
   import { invalidate } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { createSupabaseBrowserClient } from '$lib/supabase';
   import { supabaseUser } from '$lib/stores/auth';
   import { theme } from '$lib/stores/theme';
   import Toast from '$lib/components/ui/Toast.svelte';
 
   let { data, children } = $props();
-
-  const supabase = createSupabaseBrowserClient();
+  let { supabase, session } = $derived(data);
 
   onMount(() => {
     // Ensure theme store is hydrated on client
@@ -17,9 +15,9 @@
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_, session) => {
-      supabaseUser.set(session?.user ?? null);
-      if (session?.expires_at !== data.session?.expires_at) {
+    } = supabase.auth.onAuthStateChange((_, newSession) => {
+      supabaseUser.set(newSession?.user ?? null);
+      if (newSession?.expires_at !== session?.expires_at) {
         invalidate('supabase:auth');
       }
     });
