@@ -6,12 +6,11 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/publi
 const supabaseHandle: Handle = async ({ event, resolve }) => {
   event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
-      get: (key: string) => event.cookies.get(key),
-      set: (key: string, value: string, options: Record<string, unknown>) => {
-        event.cookies.set(key, value, { ...options, path: '/' });
-      },
-      remove: (key: string, options: Record<string, unknown>) => {
-        event.cookies.delete(key, { ...options, path: '/' });
+      getAll: () => event.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          event.cookies.set(name, value, { ...options, path: '/', secure: false });
+        });
       }
     }
   });
@@ -32,6 +31,12 @@ const supabaseHandle: Handle = async ({ event, resolve }) => {
 };
 
 const authGuard: Handle = async ({ event, resolve }) => {
+  // Skip session check for the auth callback — calling getSession/getUser
+  // before exchangeCodeForSession destroys the PKCE code verifier in storage
+  if (event.url.pathname === '/auth/callback') {
+    return resolve(event);
+  }
+
   const { session, user } = await event.locals.safeGetSession();
   event.locals.session = session;
   event.locals.user = user;
